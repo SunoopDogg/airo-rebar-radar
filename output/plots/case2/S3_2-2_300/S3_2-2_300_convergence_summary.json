@@ -1,0 +1,67 @@
+{
+  "total_count": 5,
+  "thresholds": {
+    "position_threshold_mm": 0.04,
+    "radius_threshold_mm": 0.002,
+    "consecutive_intervals": 5
+  },
+  "summary": {
+    "position_converged_count": 1,
+    "radius_converged_count": 2,
+    "fully_converged_count": 1,
+    "avg_position_convergence_interval": 5.0,
+    "avg_radius_convergence_interval": 55.0
+  },
+  "optimal_thresholds": {
+    "position_threshold_mm": 0.06410247514392103,
+    "radius_threshold_mm": 0.0026282755728307965,
+    "consecutive_intervals": 5
+  },
+  "tracks": [
+    {
+      "track_id": 0,
+      "position_converged": false,
+      "position_convergence_interval": null,
+      "radius_converged": false,
+      "radius_convergence_interval": null,
+      "final_position_change_mm": 0.0183532676537418,
+      "final_radius_change_mm": 0.00027916471759259487
+    },
+    {
+      "track_id": 1,
+      "position_converged": false,
+      "position_convergence_interval": null,
+      "radius_converged": true,
+      "radius_convergence_interval": 105,
+      "final_position_change_mm": 0.016703120848406222,
+      "final_radius_change_mm": 0.0011694869138517694
+    },
+    {
+      "track_id": 2,
+      "position_converged": false,
+      "position_convergence_interval": null,
+      "radius_converged": false,
+      "radius_convergence_interval": null,
+      "final_position_change_mm": 0.10389777055867282,
+      "final_radius_change_mm": 0.0021524323264542067
+    },
+    {
+      "track_id": 3,
+      "position_converged": false,
+      "position_convergence_interval": null,
+      "radius_converged": false,
+      "radius_convergence_interval": null,
+      "final_position_change_mm": 0.04538176939210447,
+      "final_radius_change_mm": 0.0012019042285212056
+    },
+    {
+      "track_id": 4,
+      "position_converged": true,
+      "position_convergence_interval": 5,
+      "radius_converged": true,
+      "radius_convergence_interval": 5,
+      "final_position_change_mm": 1.014488741949857,
+      "final_radius_change_mm": 0.02481472545387206
+    }
+  ]
+}

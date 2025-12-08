@@ -1,0 +1,67 @@
+{
+  "total_count": 5,
+  "thresholds": {
+    "position_threshold_mm": 0.04,
+    "radius_threshold_mm": 0.002,
+    "consecutive_intervals": 5
+  },
+  "summary": {
+    "position_converged_count": 2,
+    "radius_converged_count": 3,
+    "fully_converged_count": 2,
+    "avg_position_convergence_interval": 19.0,
+    "avg_radius_convergence_interval": 44.666666666666664
+  },
+  "optimal_thresholds": {
+    "position_threshold_mm": 0.0898525621574587,
+    "radius_threshold_mm": 0.003456463777336189,
+    "consecutive_intervals": 5
+  },
+  "tracks": [
+    {
+      "track_id": 0,
+      "position_converged": false,
+      "position_convergence_interval": null,
+      "radius_converged": true,
+      "radius_convergence_interval": 96,
+      "final_position_change_mm": 0.030303676102400392,
+      "final_radius_change_mm": 0.00027363489483664405
+    },
+    {
+      "track_id": 1,
+      "position_converged": false,
+      "position_convergence_interval": null,
+      "radius_converged": false,
+      "radius_convergence_interval": null,
+      "final_position_change_mm": 0.09648390279303025,
+      "final_radius_change_mm": 0.001890663248883817
+    },
+    {
+      "track_id": 2,
+      "position_converged": false,
+      "position_convergence_interval": null,
+      "radius_converged": false,
+      "radius_convergence_interval": null,
+      "final_position_change_mm": 0.439081597083345,
+      "final_radius_change_mm": 0.018244021556420437
+    },
+    {
+      "track_id": 3,
+      "position_converged": true,
+      "position_convergence_interval": 23,
+      "radius_converged": true,
+      "radius_convergence_interval": 23,
+      "final_position_change_mm": 0.49616256276990445,
+      "final_radius_change_mm": 0.006495641757208598
+    },
+    {
+      "track_id": 4,
+      "position_converged": true,
+      "position_convergence_interval": 15,
+      "radius_converged": true,
+      "radius_convergence_interval": 15,
+      "final_position_change_mm": 0.1280614863479896,
+      "final_radius_change_mm": 0.003655379949858012
+    }
+  ]
+}

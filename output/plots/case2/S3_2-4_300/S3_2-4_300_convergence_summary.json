@@ -1,0 +1,67 @@
+{
+  "total_count": 5,
+  "thresholds": {
+    "position_threshold_mm": 0.04,
+    "radius_threshold_mm": 0.002,
+    "consecutive_intervals": 5
+  },
+  "summary": {
+    "position_converged_count": 2,
+    "radius_converged_count": 3,
+    "fully_converged_count": 1,
+    "avg_position_convergence_interval": 40.5,
+    "avg_radius_convergence_interval": 55.0
+  },
+  "optimal_thresholds": {
+    "position_threshold_mm": 0.06317767395873862,
+    "radius_threshold_mm": 0.0032668895391502755,
+    "consecutive_intervals": 5
+  },
+  "tracks": [
+    {
+      "track_id": 0,
+      "position_converged": false,
+      "position_convergence_interval": null,
+      "radius_converged": true,
+      "radius_convergence_interval": 82,
+      "final_position_change_mm": 0.03190891012377958,
+      "final_radius_change_mm": 0.0006522555336327396
+    },
+    {
+      "track_id": 1,
+      "position_converged": true,
+      "position_convergence_interval": 75,
+      "radius_converged": false,
+      "radius_convergence_interval": null,
+      "final_position_change_mm": 0.014274643196561057,
+      "final_radius_change_mm": 0.0012174219477315007
+    },
+    {
+      "track_id": 2,
+      "position_converged": false,
+      "position_convergence_interval": null,
+      "radius_converged": true,
+      "radius_convergence_interval": 77,
+      "final_position_change_mm": 0.028669637600938252,
+      "final_radius_change_mm": 3.8988027140085535e-05
+    },
+    {
+      "track_id": 3,
+      "position_converged": true,
+      "position_convergence_interval": 6,
+      "radius_converged": true,
+      "radius_convergence_interval": 6,
+      "final_position_change_mm": 0.7758492641950525,
+      "final_radius_change_mm": 0.005937405235089538
+    },
+    {
+      "track_id": 4,
+      "position_converged": false,
+      "position_convergence_interval": null,
+      "radius_converged": false,
+      "radius_convergence_interval": null,
+      "final_position_change_mm": 0.013921765293371425,
+      "final_radius_change_mm": 0.0014811679240368802
+    }
+  ]
+}
