@@ -135,7 +135,7 @@ class Visualizer:
         if points is not None and len(points) > 0:
             ax.scatter(
                 points[:, 0], points[:, 1],
-                s=5, c="lightgray", alpha=0.5, label="Points"
+                s=5, c="lightgray", alpha=0.5, label="Points", zorder=1
             )
 
         for track in tracks:
@@ -146,36 +146,61 @@ class Visualizer:
                 track.radius,
                 fill=False,
                 color=color,
-                linewidth=2
+                linewidth=2,
+                zorder=10
             )
             ax.add_patch(circle)
 
             ax.plot(
                 track.center_x, track.center_y,
-                "o", color=color, markersize=8
+                "o", color=color, markersize=8, zorder=20
             )
 
-            annotation_lines = [f"ID:{track.track_id}", f"hits:{track.hits}"]
-            if distance_errors is not None and track.track_id in distance_errors:
-                error_mm = distance_errors[track.track_id] * self.config.mm_per_meter
-                annotation_lines.append(f"err:{error_mm:.2f}mm")
+        sorted_tracks = sorted(tracks, key=lambda t: -t.center_y)
 
-            ax.annotate(
-                "\n".join(annotation_lines),
-                (track.center_x, track.center_y),
-                textcoords="offset points",
-                xytext=(15, 15),
-                fontsize=8,
-                color=color,
-                bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.7)
-            )
+        n_tracks = len(sorted_tracks)
+        if n_tracks > 0:
+            y_fractions = np.linspace(0.9, 0.1, n_tracks) if n_tracks > 1 else [0.5]
+
+            for idx, track in enumerate(sorted_tracks):
+                color = self.colors[track.track_id % len(self.colors)]
+
+                annotation_lines = [f"ID:{track.track_id}", f"hits:{track.hits}"]
+                if distance_errors is not None and track.track_id in distance_errors:
+                    error_mm = distance_errors[track.track_id] * self.config.mm_per_meter
+                    annotation_lines.append(f"err:{error_mm:.2f}mm")
+
+                ax.annotate(
+                    "\n".join(annotation_lines),
+                    xy=(track.center_x, track.center_y),
+                    xycoords='data',
+                    xytext=(1.02, y_fractions[idx]),
+                    textcoords='axes fraction',
+                    fontsize=8,
+                    color=color,
+                    bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.85),
+                    arrowprops=dict(
+                        arrowstyle="->",
+                        color=color,
+                        alpha=0.5,
+                        connectionstyle="arc3,rad=0.1"
+                    ),
+                    zorder=100
+                )
 
         self._setup_axes(ax, title or f"Tracked Rebars - Frame {frame_id}")
 
         if structure is not None:
             self._set_structure_limits(ax, structure)
 
-        self._finalize_plot(fig, save_path, show)
+        plt.tight_layout()
+        plt.subplots_adjust(right=0.82)
+
+        if save_path:
+            plt.savefig(save_path, dpi=self.config.default_dpi, bbox_inches="tight")
+        if show:
+            plt.show()
+        plt.close(fig)
 
     def draw_structure_overlay(
         self,
