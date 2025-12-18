@@ -66,12 +66,14 @@ class Clusterer:
         """
         unique_labels = set(labels)
         n_clusters = len(unique_labels) - (1 if -1 in unique_labels else 0)
-        n_noise = np.sum(labels == -1)
+        n_noise = int(np.sum(labels == -1))
 
-        cluster_sizes = []
-        for label in unique_labels:
-            if label != -1:
-                cluster_sizes.append(np.sum(labels == label))
+        # Use bincount for O(n) instead of O(n*k) loop
+        valid_labels = labels[labels >= 0]
+        if len(valid_labels) > 0:
+            cluster_sizes = list(np.bincount(valid_labels))
+        else:
+            cluster_sizes = []
 
         return {
             "n_clusters": n_clusters,
@@ -80,20 +82,3 @@ class Clusterer:
             "cluster_sizes": cluster_sizes,
             "mean_cluster_size": np.mean(cluster_sizes) if cluster_sizes else 0,
         }
-
-    def update_params(self, eps: float | None = None, min_samples: int | None = None):
-        """Update DBSCAN parameters.
-
-        Args:
-            eps: New eps value
-            min_samples: New min_samples value
-        """
-        if eps is not None:
-            self.config.eps = eps
-        if min_samples is not None:
-            self.config.min_samples = min_samples
-
-        self._dbscan = DBSCAN(
-            eps=self.config.eps,
-            min_samples=self.config.min_samples
-        )
