@@ -15,7 +15,6 @@ class Track:
     center_x: float
     center_y: float
     radius: float
-    confidence: float
     age: int = 0  # Number of frames since creation
     hits: int = 1  # Number of successful associations
     misses: int = 0  # Number of consecutive misses
@@ -109,14 +108,14 @@ class TemporalFilter:
 
     def _associate_detections(
         self,
-        detections: list[tuple[float, float, float, float]]
+        detections: list[tuple[float, float, float]]
     ) -> tuple[list[tuple[int, int]], list[int], list[int]]:
         """Associate detections with existing tracks using Hungarian algorithm.
 
         Simple greedy association based on distance threshold.
 
         Args:
-            detections: List of (x, y, r, confidence) tuples
+            detections: List of (x, y, r) tuples
 
         Returns:
             Tuple of (matches, unmatched_tracks, unmatched_detections)
@@ -140,28 +139,25 @@ class TemporalFilter:
                 if dist <= self.config.max_distance:
                     dist_matrix[i, j] = dist
 
-        # Greedy matching
+        # Greedy matching - optimized O(m*n) instead of O(m*n²)
         matches = []
         matched_tracks = set()
         matched_detections = set()
 
-        while True:
-            # Find minimum distance
-            min_val = np.min(dist_matrix)
-            if min_val == np.inf:
-                break
+        # Sort tracks by their minimum distance to any detection
+        min_per_row = np.min(dist_matrix, axis=1)
+        sorted_rows = np.argsort(min_per_row)
 
-            # Get indices
-            track_idx, det_idx = np.unravel_index(
-                np.argmin(dist_matrix), dist_matrix.shape
-            )
+        for track_idx in sorted_rows:
+            if dist_matrix[track_idx].min() == np.inf:
+                continue
+            det_idx = int(np.argmin(dist_matrix[track_idx]))
 
             matches.append((track_idx, det_idx))
             matched_tracks.add(track_idx)
             matched_detections.add(det_idx)
 
-            # Mark row and column as used
-            dist_matrix[track_idx, :] = np.inf
+            # Mark column as used
             dist_matrix[:, det_idx] = np.inf
 
         unmatched_tracks = [i for i in range(n_tracks) if i not in matched_tracks]
@@ -171,12 +167,12 @@ class TemporalFilter:
 
     def update(
         self,
-        detections: list[tuple[float, float, float, float]]
+        detections: list[tuple[float, float, float]]
     ) -> list[Track]:
         """Update tracks with new detections.
 
         Args:
-            detections: List of (x, y, r, confidence) tuples
+            detections: List of (x, y, r) tuples
 
         Returns:
             List of active tracks after update
@@ -196,7 +192,7 @@ class TemporalFilter:
         # Update matched tracks
         for track_idx, det_idx in matches:
             track = self.tracks[track_idx]
-            det_x, det_y, det_r, det_conf = detections[det_idx]
+            det_x, det_y, det_r = detections[det_idx]
 
             if track.kalman_filter is not None:
                 # Kalman update
@@ -210,8 +206,6 @@ class TemporalFilter:
                 track.center_y = det_y
                 track.radius = det_r
 
-            # Update confidence with exponential moving average
-            track.confidence = 0.7 * track.confidence + 0.3 * det_conf
             track.hits += 1
             track.misses = 0
             track.age += 1
@@ -221,17 +215,15 @@ class TemporalFilter:
             track = self.tracks[track_idx]
             track.misses += 1
             track.age += 1
-            track.confidence *= 0.9  # Decay confidence
 
         # Create new tracks for unmatched detections
         for det_idx in unmatched_detections:
-            det_x, det_y, det_r, det_conf = detections[det_idx]
+            det_x, det_y, det_r = detections[det_idx]
             new_track = Track(
                 track_id=self._next_track_id,
                 center_x=det_x,
                 center_y=det_y,
                 radius=det_r,
-                confidence=det_conf,
                 kalman_filter=self._create_kalman_filter(det_x, det_y, det_r)
             )
             self.tracks.append(new_track)
