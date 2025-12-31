@@ -3,20 +3,20 @@
 from pathlib import Path
 
 
-def select_csv_files(input_dir: Path) -> list[Path]:
-    """Interactively select CSV files to process.
+def select_csv_file(input_dir: Path) -> Path | None:
+    """Interactively select a single CSV file to process.
 
     Args:
         input_dir: Directory containing CSV files
 
     Returns:
-        List of selected CSV file paths
+        Selected CSV file path, or None if no files available
     """
     csv_files = sorted(input_dir.glob("*.csv"))
 
     if not csv_files:
         print(f"No CSV files found in {input_dir}")
-        return []
+        return None
 
     # Display file list
     print("\nAvailable CSV files:")
@@ -26,35 +26,21 @@ def select_csv_files(input_dir: Path) -> list[Path]:
     print("-" * 40)
 
     # User input prompt
-    print("\nSelect files to process:")
-    print("  - Single file: 1")
-    print("  - Multiple files: 1,2,3")
-    print("  - Range: 1-3")
-    print("  - All files: all or a")
+    print("\nSelect a file to process (enter number):")
 
     while True:
-        selection = input("\nSelection: ").strip().lower()
+        selection = input("\nSelection: ").strip()
 
-        # Parse input
-        if selection in ('all', 'a', ''):
-            return csv_files
+        # Default to first file if empty
+        if selection == "":
+            print(f"Selected: {csv_files[0].name}")
+            return csv_files[0]
 
         try:
-            selected_indices = set()
-            for part in selection.split(','):
-                part = part.strip()
-                if '-' in part:
-                    start, end = part.split('-')
-                    selected_indices.update(range(int(start), int(end) + 1))
-                else:
-                    selected_indices.add(int(part))
-
-            # Filter valid indices
-            selected = [csv_files[i - 1] for i in sorted(selected_indices)
-                        if 1 <= i <= len(csv_files)]
-
-            if selected:
-                return selected
-            print("No valid files selected. Please try again.")
+            idx = int(selection)
+            if 1 <= idx <= len(csv_files):
+                print(f"Selected: {csv_files[idx - 1].name}")
+                return csv_files[idx - 1]
+            print(f"Please enter a number between 1 and {len(csv_files)}.")
         except ValueError:
-            print("Invalid input format. Please try again.")
+            print("Invalid input. Please enter a number.")
