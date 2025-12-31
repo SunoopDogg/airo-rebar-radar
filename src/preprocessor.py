@@ -17,6 +17,26 @@ class Preprocessor:
         """
         self.config = config or PreprocessingConfig()
 
+    def _apply_lidar_offset(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Apply LIDAR origin offset to transform coordinates.
+
+        Transforms from sensor-local frame to reference frame:
+            x_new = x + lidar_offset_x
+            y_new = y + lidar_offset_y
+
+        Args:
+            df: DataFrame with 'x' and 'y' columns
+
+        Returns:
+            DataFrame with transformed coordinates
+        """
+        if self.config.lidar_offset_x == 0.0 and self.config.lidar_offset_y == 0.0:
+            return df
+        df = df.copy()
+        df["x"] = df["x"] + self.config.lidar_offset_x
+        df["y"] = df["y"] + self.config.lidar_offset_y
+        return df
+
     def filter_by_region(
         self,
         points: np.ndarray,
@@ -76,10 +96,13 @@ class Preprocessor:
         if len(df) == 0:
             return df, np.array([]).reshape(0, 2)
 
-        # Step 1: Extract points
+        # Step 1: Apply LIDAR origin offset (sensor → reference frame)
+        df = self._apply_lidar_offset(df)
+
+        # Step 2: Extract points
         points = df[["x", "y"]].values
 
-        # Step 2: Filter by region
+        # Step 3: Filter by region
         filtered_points, region_mask = self.filter_by_region(points)
 
         return df[region_mask], filtered_points
