@@ -2,12 +2,13 @@
 
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from .clustering import Clusterer
 from .circle_fitter import CircleFitter
 from .preprocessor import Preprocessor
-from .temporal_filter import TemporalFilter
+from .temporal_filter import TemporalFilter, Track
 from .utils.cli import select_csv_file
 from .utils.config import Config
 from .utils.io_handler import IOHandler
@@ -70,7 +71,7 @@ class RebarDetector:
             for r in fit_results
         ]
 
-        if detections:
+        if detections and self.config.kalman_filter.enabled:
             detection_tuples = [
                 (d["center_x"], d["center_y"], d["radius"])
                 for d in detections
@@ -89,6 +90,76 @@ class RebarDetector:
             "fit_results": fit_results,
         }
 
+    def _compute_averaged_tracks(
+        self, frame_results: list[dict], distance_threshold: float = 0.05
+    ) -> list[Track]:
+        """Compute averaged tracks from frame detections without Kalman filtering.
+
+        Groups detections across frames by spatial proximity and computes
+        average center positions and radii.
+
+        Args:
+            frame_results: List of frame processing results
+            distance_threshold: Maximum distance to associate detections (meters)
+
+        Returns:
+            List of Track objects with averaged values
+        """
+        # Collect all detections
+        all_detections: list[tuple[float, float, float]] = []
+        for fr in frame_results:
+            for det in fr["detections"]:
+                all_detections.append(
+                    (det["center_x"], det["center_y"], det["radius"])
+                )
+
+        if not all_detections:
+            return []
+
+        # Cluster detections by spatial proximity using simple greedy grouping
+        groups: list[list[tuple[float, float, float]]] = []
+
+        for det in all_detections:
+            det_x, det_y, det_r = det
+            assigned = False
+
+            # Try to assign to existing group
+            for group in groups:
+                # Compute average position of group
+                avg_x = np.mean([d[0] for d in group])
+                avg_y = np.mean([d[1] for d in group])
+
+                distance = np.sqrt((det_x - avg_x) ** 2 + (det_y - avg_y) ** 2)
+                if distance <= distance_threshold:
+                    group.append(det)
+                    assigned = True
+                    break
+
+            # Create new group if not assigned
+            if not assigned:
+                groups.append([det])
+
+        # Convert groups to Track objects
+        tracks: list[Track] = []
+        for track_id, group in enumerate(groups):
+            if len(group) < 2:  # Require at least 2 detections (like min_hits)
+                continue
+
+            avg_x = float(np.mean([d[0] for d in group]))
+            avg_y = float(np.mean([d[1] for d in group]))
+            avg_r = float(np.mean([d[2] for d in group]))
+
+            track = Track(
+                track_id=track_id,
+                center_x=avg_x,
+                center_y=avg_y,
+                radius=avg_r,
+                hits=len(group),
+            )
+            tracks.append(track)
+
+        return tracks
+
     def process_file(self, file_path: Path, df: pd.DataFrame | None = None) -> dict:
         """Process a single CSV file.
 
@@ -103,14 +174,19 @@ class RebarDetector:
             df = IOHandler.load_csv(file_path)
 
         n_frames = df["frame"].nunique()
-        self.temporal_filter.reset()
+        if self.config.kalman_filter.enabled:
+            self.temporal_filter.reset()
 
         all_results = []
         for frame_id, frame_df in df.groupby("frame", sort=True):
             result = self.process_frame(frame_df, frame_id)
             all_results.append(result)
 
-        stable_tracks = self.temporal_filter.get_stable_tracks(min_hits=2)
+        if self.config.kalman_filter.enabled:
+            stable_tracks = self.temporal_filter.get_stable_tracks(min_hits=2)
+        else:
+            stable_tracks = self._compute_averaged_tracks(all_results)
+
         total_detections = sum(r["n_detections"] for r in all_results)
 
         return {

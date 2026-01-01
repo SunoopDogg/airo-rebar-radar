@@ -61,6 +61,7 @@ class CircleFittingConfig:
 @dataclass
 class KalmanFilterConfig:
     """Kalman filter configuration for temporal stabilization."""
+    enabled: bool = False  # Enable/disable Kalman filtering
     process_noise: float = 0.001  # Process noise covariance
     measurement_noise: float = 0.01  # Measurement noise covariance
     max_distance: float = 0.1  # Maximum distance for track association
@@ -78,7 +79,7 @@ class StructureConfig:
     """
 
     # Orientation setting
-    orientation: Orientation = Orientation.HORIZONTAL
+    orientation: Orientation = Orientation.VERTICAL
 
     # Dimensions in meters (defined as vertical orientation)
     width: float = 0.290        # 290mm (short side)
@@ -99,8 +100,8 @@ class StructureConfig:
     track_diameter: float = 0.032   # 32mm (D32)
 
     # Structure center position
-    center_x: float = -1.05     # X-axis center
-    center_y: float = -3.0     # Y-axis center
+    center_x: float = -2.1     # X-axis center
+    center_y: float = -3.45     # Y-axis center
 
     # Rotation angle in radians (positive = counter-clockwise)
     yaw: float = 0.0
