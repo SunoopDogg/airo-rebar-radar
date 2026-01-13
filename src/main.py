@@ -1,5 +1,6 @@
 """Main execution module for LIDAR-based rebar detection system."""
 
+from collections.abc import Callable
 from pathlib import Path
 
 import numpy as np
@@ -160,12 +161,18 @@ class RebarDetector:
 
         return tracks
 
-    def process_file(self, file_path: Path, df: pd.DataFrame | None = None) -> dict:
+    def process_file(
+        self,
+        file_path: Path,
+        df: pd.DataFrame | None = None,
+        progress_callback: Callable[[int, int], None] | None = None,
+    ) -> dict:
         """Process a single CSV file.
 
         Args:
             file_path: Path to CSV file
             df: Pre-loaded DataFrame (optional, loads from file_path if None)
+            progress_callback: Optional callback for progress updates (current, total)
 
         Returns:
             Dictionary with processing results for all frames
@@ -181,6 +188,8 @@ class RebarDetector:
         for frame_id, frame_df in df.groupby("frame", sort=True):
             result = self.process_frame(frame_df, frame_id)
             all_results.append(result)
+            if progress_callback:
+                progress_callback(len(all_results), n_frames)
 
         if self.config.kalman_filter.enabled:
             stable_tracks = self.temporal_filter.get_stable_tracks(min_hits=2)
@@ -283,12 +292,15 @@ def main():
     print("=" * 50)
     print(f"Processing: {selected_file.name}")
     detector = RebarDetector(config)
-    summary = detector.process_file(selected_file, df=df)
 
+    def log_progress(current: int, total: int) -> None:
+        if current % 10 == 0 or current == total:
+            print(f"  Processed frame {current}/{total}")
+
+    summary = detector.process_file(
+        selected_file, df=df, progress_callback=log_progress
+    )
     n_frames = summary["n_frames"]
-    for i, fr in enumerate(summary["frame_results"]):
-        if (i + 1) % 10 == 0 or i == n_frames - 1:
-            print(f"  Processed frame {i + 1}/{n_frames}")
 
     print(f"  Total detections: {summary['total_detections']}")
     print(f"  Stable tracks: {summary['n_stable_tracks']}")
