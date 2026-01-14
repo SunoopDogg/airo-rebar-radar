@@ -1,26 +1,36 @@
 """Visualization module for rebar detection results."""
 
-import math
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 
 from .circle_fitter import CircleFitResult
+from .structure_renderer import StructureRenderer, create_structure_legend_elements
 from .temporal_filter import Track
-from .utils.config import StructureConfig
+from .utils.config import VisualizationConfig
+from .utils.structure import StructureConfig
+
+if TYPE_CHECKING:
+    from .pipeline import FrameResult
 
 
 class Visualizer:
     """Visualize LIDAR data and detection results."""
 
-    def __init__(self, output_dir: Path | None = None):
+    def __init__(
+        self,
+        output_dir: Path | None = None,
+        config: VisualizationConfig | None = None
+    ):
         """Initialize visualizer.
 
         Args:
             output_dir: Directory to save plots
+            config: Visualization configuration
         """
+        self.config = config or VisualizationConfig()
         self.output_dir = output_dir or Path("output/plots")
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -42,7 +52,7 @@ class Visualizer:
         """Save, show, and close the figure."""
         plt.tight_layout()
         if save_path:
-            plt.savefig(save_path, dpi=150, bbox_inches="tight")
+            plt.savefig(save_path, dpi=self.config.default_dpi, bbox_inches="tight")
         if show:
             plt.show()
         plt.close(fig)
@@ -59,19 +69,18 @@ class Visualizer:
             )
 
     def _set_structure_limits(
-        self, ax: plt.Axes, structure: StructureConfig, margin: float = 0.1
+        self, ax: plt.Axes, structure: StructureConfig, margin: float | None = None
     ) -> None:
-        """Set axis limits based on structure dimensions and orientation."""
-        display_width, display_height = structure.get_display_dimensions()
+        """Set axis limits based on structure dimensions and orientation.
 
-        ax.set_xlim(
-            structure.center_x - display_width / 2 - margin,
-            structure.center_x + display_width / 2 + margin
-        )
-        ax.set_ylim(
-            structure.center_y - display_height / 2 - margin,
-            structure.center_y + display_height / 2 + margin
-        )
+        Args:
+            ax: Matplotlib axes to set limits on
+            structure: Structure configuration
+            margin: Optional margin to add around structure.
+                    If None, uses 10% of the larger dimension or 0.1m minimum.
+        """
+        renderer = StructureRenderer(structure)
+        renderer.set_axis_limits(ax, margin)
 
     def plot_raw_points(
         self,
@@ -88,113 +97,9 @@ class Visualizer:
             save_path: Path to save figure
             show: Whether to display the plot
         """
-        fig, ax = plt.subplots(figsize=(10, 8))
+        fig, ax = plt.subplots(figsize=self.config.figure_size_standard)
 
         ax.scatter(points[:, 0], points[:, 1], s=5, alpha=0.6, c="blue")
-        self._setup_axes(ax, title)
-        self._finalize_plot(fig, save_path, show)
-
-    def plot_clusters(
-        self,
-        points: np.ndarray,
-        labels: np.ndarray,
-        title: str = "Clustered Points",
-        save_path: Path | None = None,
-        show: bool = False
-    ) -> None:
-        """Plot clustered points with different colors.
-
-        Args:
-            points: Array of shape (N, 2) with x, y coordinates
-            labels: Cluster labels (-1 for noise)
-            title: Plot title
-            save_path: Path to save figure
-            show: Whether to display the plot
-        """
-        fig, ax = plt.subplots(figsize=(10, 8))
-
-        unique_labels = set(labels)
-
-        for label in unique_labels:
-            mask = labels == label
-            if label == -1:
-                ax.scatter(
-                    points[mask, 0], points[mask, 1],
-                    s=5, c="gray", alpha=0.3, label="Noise"
-                )
-            else:
-                color = self.colors[label % len(self.colors)]
-                ax.scatter(
-                    points[mask, 0], points[mask, 1],
-                    s=20, c=[color], alpha=0.8, label=f"Cluster {label}"
-                )
-
-        self._setup_axes(ax, title)
-        ax.legend(loc="upper right")
-        self._finalize_plot(fig, save_path, show)
-
-    def plot_circle_fits(
-        self,
-        points: np.ndarray,
-        labels: np.ndarray,
-        fit_results: list[CircleFitResult],
-        title: str = "Circle Fitting Results",
-        save_path: Path | None = None,
-        show: bool = False
-    ) -> None:
-        """Plot points with fitted circles.
-
-        Args:
-            points: Array of shape (N, 2) with x, y coordinates
-            labels: Cluster labels
-            fit_results: List of circle fit results
-            title: Plot title
-            save_path: Path to save figure
-            show: Whether to display the plot
-        """
-        fig, ax = plt.subplots(figsize=(12, 10))
-
-        unique_labels = set(labels)
-        unique_labels.discard(-1)
-
-        self._plot_noise_points(ax, points, labels)
-
-        # Plot each cluster and its fitted circle
-        for i, label in enumerate(sorted(unique_labels)):
-            mask = labels == label
-            color = self.colors[i % len(self.colors)]
-
-            ax.scatter(
-                points[mask, 0], points[mask, 1],
-                s=5, c=[color], alpha=0.8
-            )
-
-            if i < len(fit_results):
-                result = fit_results[i]
-                circle = plt.Circle(
-                    (result.center_x, result.center_y),
-                    result.radius,
-                    fill=False,
-                    color=color,
-                    linewidth=1,
-                    linestyle="--"
-                )
-                ax.add_patch(circle)
-
-                ax.plot(
-                    result.center_x, result.center_y,
-                    "x", color=color, markersize=10, markeredgewidth=1
-                )
-
-                ax.annotate(
-                    f"r={result.radius*1000:.1f}mm",
-                    (result.center_x, result.center_y),
-                    textcoords="offset points",
-                    xytext=(10, 10),
-                    fontsize=8,
-                    color=color
-                )
-
         self._setup_axes(ax, title)
         self._finalize_plot(fig, save_path, show)
 
@@ -221,7 +126,7 @@ class Visualizer:
             save_path: Path to save figure
             show: Whether to display the plot
         """
-        fig, ax = plt.subplots(figsize=(12, 10))
+        fig, ax = plt.subplots(figsize=self.config.figure_size_large)
 
         if structure is not None:
             self.draw_structure_overlay(ax, structure)
@@ -251,7 +156,7 @@ class Visualizer:
 
             annotation_lines = [f"ID:{track.track_id}", f"hits:{track.hits}"]
             if distance_errors is not None and track.track_id in distance_errors:
-                error_mm = distance_errors[track.track_id] * 1000
+                error_mm = distance_errors[track.track_id] * self.config.mm_per_meter
                 annotation_lines.append(f"err:{error_mm:.2f}mm")
 
             ax.annotate(
@@ -282,60 +187,8 @@ class Visualizer:
             ax: Matplotlib axes to draw on
             structure: Structure configuration with dimensions and yaw
         """
-        # Get display dimensions based on orientation
-        display_width, display_height = structure.get_display_dimensions()
-
-        # Calculate structure boundary corners
-        half_width = display_width / 2
-        half_height = display_height / 2
-
-        # Define corners relative to center (before rotation)
-        corners = [
-            (-half_width, -half_height),
-            (half_width, -half_height),
-            (half_width, half_height),
-            (-half_width, half_height),
-        ]
-
-        # Apply rotation and translation
-        cos_yaw = math.cos(structure.yaw)
-        sin_yaw = math.sin(structure.yaw)
-        rotated_corners = []
-        for dx, dy in corners:
-            x = dx * cos_yaw - dy * sin_yaw + structure.center_x
-            y = dx * sin_yaw + dy * cos_yaw + structure.center_y
-            rotated_corners.append((x, y))
-
-        # Draw concrete outline as polygon (supports rotation)
-        poly = mpatches.Polygon(
-            rotated_corners,
-            fill=False,
-            edgecolor="gray",
-            linewidth=2,
-            linestyle="-",
-            label="Concrete outline"
-        )
-        ax.add_patch(poly)
-
-        # Draw expected rebar positions (already includes rotation via get_track_positions)
-        track_positions = structure.get_track_positions()
-        track_radius = structure.track_diameter / 2
-
-        for x, y in track_positions:
-            # Expected rebar circle (blue, dashed)
-            circle = plt.Circle(
-                (x, y),
-                track_radius,
-                fill=False,
-                edgecolor="blue",
-                linewidth=1.5,
-                linestyle=":",
-                alpha=0.7
-            )
-            ax.add_patch(circle)
-
-            # Center marker
-            ax.plot(x, y, "+", color="blue", markersize=8, markeredgewidth=1.5, alpha=0.7)
+        renderer = StructureRenderer(structure)
+        renderer.draw_full_overlay(ax)
 
     def plot_with_structure(
         self,
@@ -358,7 +211,7 @@ class Visualizer:
             save_path: Path to save figure
             show: Whether to display the plot
         """
-        fig, ax = plt.subplots(figsize=(12, 10))
+        fig, ax = plt.subplots(figsize=self.config.figure_size_large)
 
         self.draw_structure_overlay(ax, structure)
 
@@ -394,7 +247,7 @@ class Visualizer:
                 )
 
                 ax.annotate(
-                    f"r={result.radius*1000:.1f}mm",
+                    f"r={result.radius * self.config.mm_per_meter:.1f}mm",
                     (result.center_x, result.center_y),
                     textcoords="offset points",
                     xytext=(10, 10),
@@ -404,14 +257,7 @@ class Visualizer:
                     bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.8)
                 )
 
-        legend_elements = [
-            plt.Line2D([0], [0], color="gray", linestyle="-",
-                       linewidth=2, label="Concrete outline"),
-            plt.Line2D([0], [0], color="blue", linestyle=":",
-                       linewidth=1.5, label="Expected rebar"),
-            plt.Line2D([0], [0], color="red", linestyle="-",
-                       linewidth=2, label="Detected rebar"),
-        ]
+        legend_elements = create_structure_legend_elements()
         ax.legend(handles=legend_elements, loc="upper right")
 
         self._setup_axes(ax, title)
@@ -420,7 +266,7 @@ class Visualizer:
 
     def plot_detection_summary(
         self,
-        all_detections: list[dict],
+        all_detections: list[dict] | list["FrameResult"],
         title: str = "Detection Summary",
         save_path: Path | None = None,
         show: bool = False
@@ -428,15 +274,25 @@ class Visualizer:
         """Plot summary of all detections across frames.
 
         Args:
-            all_detections: List of detection dictionaries per frame
+            all_detections: List of detection dictionaries or FrameResult objects per frame
             title: Plot title
             save_path: Path to save figure
             show: Whether to display the plot
         """
-        fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+        fig, axes = plt.subplots(1, 2, figsize=self.config.figure_size_summary)
 
-        frames = [d["frame"] for d in all_detections]
-        n_detections = [d["n_detections"] for d in all_detections]
+        # Extract frame IDs and detection counts, handling both dict and FrameResult
+        frames = []
+        n_detections = []
+        for d in all_detections:
+            if hasattr(d, "frame_id"):
+                # FrameResult dataclass
+                frames.append(d.frame_id)
+                n_detections.append(d.n_detections)
+            else:
+                # dict
+                frames.append(d["frame"])
+                n_detections.append(d["n_detections"])
 
         axes[0].plot(frames, n_detections, "b-o", markersize=4)
         axes[0].set_xlabel("Frame")
@@ -447,7 +303,13 @@ class Visualizer:
         all_x = []
         all_y = []
         for d in all_detections:
-            for det in d.get("detections", []):
+            # Handle both dict and FrameResult
+            if hasattr(d, "detections"):
+                detections = d.detections
+            else:
+                detections = d.get("detections", [])
+
+            for det in detections:
                 all_x.append(det["center_x"])
                 all_y.append(det["center_y"])
 
