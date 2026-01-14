@@ -6,6 +6,7 @@ import numpy as np
 from filterpy.kalman import KalmanFilter
 
 from .utils.config import KalmanFilterConfig
+from .utils.geometry import calculate_distance_np
 
 
 @dataclass
@@ -33,7 +34,6 @@ class TemporalFilter:
         self.config = config or KalmanFilterConfig()
         self.tracks: list[Track] = []
         self._next_track_id = 0
-        self._max_misses = 3  # Maximum consecutive misses before track deletion
 
     def _create_kalman_filter(
         self,
@@ -57,13 +57,13 @@ class TemporalFilter:
         kf = KalmanFilter(dim_x=5, dim_z=3)
 
         # State transition matrix (constant velocity model)
-        dt = 1.0  # Time step between frames
+        dt = self.config.time_step
         kf.F = np.array([
-            [1, 0, 0, dt, 0],  # x = x + vx*dt
-            [0, 1, 0, 0, dt],  # y = y + vy*dt
-            [0, 0, 1, 0, 0],   # r = r (constant)
-            [0, 0, 0, 1, 0],   # vx = vx
-            [0, 0, 0, 0, 1],   # vy = vy
+            [1, 0, 0, dt, 0],
+            [0, 1, 0, 0, dt],
+            [0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 0],
+            [0, 0, 0, 0, 1],
         ])
 
         # Measurement matrix
@@ -80,16 +80,26 @@ class TemporalFilter:
         kf.P *= 0.1
 
         # Process noise
-        q = self.config.process_noise
-        kf.Q = np.diag([q, q, q * 0.1, q, q])
+        process_noise = self.config.process_noise
+        kf.Q = np.diag([
+            process_noise,
+            process_noise,
+            process_noise * self.config.radius_process_noise_scale,
+            process_noise,
+            process_noise,
+        ])
 
         # Measurement noise
-        r = self.config.measurement_noise
-        kf.R = np.diag([r, r, r * 0.5])
+        measurement_noise = self.config.measurement_noise
+        kf.R = np.diag([
+            measurement_noise,
+            measurement_noise,
+            measurement_noise * self.config.radius_measurement_noise_scale,
+        ])
 
         return kf
 
-    def _compute_distance(
+    def _compute_track_to_detection_distance(
         self,
         track: Track,
         detection: tuple[float, float, float]
@@ -104,13 +114,13 @@ class TemporalFilter:
             Euclidean distance between predicted and detected positions
         """
         det_x, det_y, _ = detection
-        return np.sqrt((track.center_x - det_x)**2 + (track.center_y - det_y)**2)
+        return calculate_distance_np(track.center_x, track.center_y, det_x, det_y)
 
-    def _associate_detections(
+    def _associate_detections_greedy(
         self,
         detections: list[tuple[float, float, float]]
     ) -> tuple[list[tuple[int, int]], list[int], list[int]]:
-        """Associate detections with existing tracks using Hungarian algorithm.
+        """Associate detections with existing tracks using greedy algorithm.
 
         Simple greedy association based on distance threshold.
 
@@ -135,7 +145,7 @@ class TemporalFilter:
 
         for i, track in enumerate(self.tracks):
             for j, det in enumerate(detections):
-                dist = self._compute_distance(track, det[:3])
+                dist = self._compute_track_to_detection_distance(track, det[:3])
                 if dist <= self.config.max_distance:
                     dist_matrix[i, j] = dist
 
@@ -187,7 +197,7 @@ class TemporalFilter:
 
         # Associate detections with tracks
         matches, unmatched_tracks, unmatched_detections = \
-            self._associate_detections(detections)
+            self._associate_detections_greedy(detections)
 
         # Update matched tracks
         for track_idx, det_idx in matches:
@@ -230,7 +240,10 @@ class TemporalFilter:
             self._next_track_id += 1
 
         # Remove dead tracks
-        self.tracks = [t for t in self.tracks if t.misses < self._max_misses]
+        self.tracks = [
+            t for t in self.tracks
+            if t.misses < self.config.max_consecutive_misses
+        ]
 
         return self.tracks
 

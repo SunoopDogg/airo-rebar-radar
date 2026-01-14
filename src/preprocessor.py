@@ -4,6 +4,9 @@ import numpy as np
 import pandas as pd
 
 from .utils.config import PreprocessingConfig
+from .utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class Preprocessor:
@@ -66,7 +69,6 @@ class Preprocessor:
         y_min = y_min if y_min is not None else self.config.roi_y_min
         y_max = y_max if y_max is not None else self.config.roi_y_max
 
-        # Start with all True mask
         mask = np.ones(len(points), dtype=bool)
 
         # Apply filters for each boundary (skip if None)
@@ -94,15 +96,21 @@ class Preprocessor:
             Tuple of (preprocessed_df, filtered_points)
         """
         if len(df) == 0:
+            logger.debug("Empty DataFrame received for preprocessing")
             return df, np.array([]).reshape(0, 2)
 
-        # Step 1: Apply LIDAR origin offset (sensor → reference frame)
+        # Validate required columns
+        required_columns = {"x", "y"}
+        missing_columns = required_columns - set(df.columns)
+        if missing_columns:
+            logger.error("Missing required columns: %s", missing_columns)
+            return df, np.array([]).reshape(0, 2)
+
         df = self._apply_lidar_offset(df)
-
-        # Step 2: Extract points
         points = df[["x", "y"]].values
-
-        # Step 3: Filter by region
         filtered_points, region_mask = self.filter_by_region(points)
+
+        if len(filtered_points) == 0:
+            logger.debug("No points remain after ROI filtering")
 
         return df[region_mask], filtered_points

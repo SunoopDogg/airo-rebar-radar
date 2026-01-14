@@ -6,6 +6,10 @@ from itertools import combinations
 import numpy as np
 
 from .utils.config import CircleFittingConfig
+from .utils.geometry import calculate_distance_np
+from .utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -29,7 +33,7 @@ class CircleFitter:
         """
         self.config = config or CircleFittingConfig()
 
-    def _circle_from_3_points(
+    def _compute_circumcircle(
         self,
         p1: np.ndarray,
         p2: np.ndarray,
@@ -46,31 +50,26 @@ class CircleFitter:
         Returns:
             Tuple of (center_x, center_y, radius) or None if collinear
         """
-        # Extract coordinates
         x1, y1 = p1
         x2, y2 = p2
         x3, y3 = p3
 
-        # Calculate determinant to check collinearity
         # D = 2 * (x1(y2-y3) + x2(y3-y1) + x3(y1-y2))
-        d = 2 * (x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2))
+        denominator = 2 * (x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2))
 
-        # Points are collinear if D is close to zero
-        if abs(d) < 1e-10:
+        if abs(denominator) < self.config.collinearity_tolerance:
             return None
 
-        # Calculate circumcenter
         # ux = ((x1²+y1²)(y2-y3) + (x2²+y2²)(y3-y1) + (x3²+y3²)(y1-y2)) / D
         # uy = ((x1²+y1²)(x3-x2) + (x2²+y2²)(x1-x3) + (x3²+y3²)(x2-x1)) / D
-        sq1 = x1**2 + y1**2
-        sq2 = x2**2 + y2**2
-        sq3 = x3**2 + y3**2
+        mag_sq_1 = x1**2 + y1**2
+        mag_sq_2 = x2**2 + y2**2
+        mag_sq_3 = x3**2 + y3**2
 
-        cx = (sq1 * (y2 - y3) + sq2 * (y3 - y1) + sq3 * (y1 - y2)) / d
-        cy = (sq1 * (x3 - x2) + sq2 * (x1 - x3) + sq3 * (x2 - x1)) / d
+        cx = (mag_sq_1 * (y2 - y3) + mag_sq_2 * (y3 - y1) + mag_sq_3 * (y1 - y2)) / denominator
+        cy = (mag_sq_1 * (x3 - x2) + mag_sq_2 * (x1 - x3) + mag_sq_3 * (x2 - x1)) / denominator
 
-        # Calculate radius
-        radius = np.sqrt((x1 - cx)**2 + (y1 - cy)**2)
+        radius = calculate_distance_np(x1, y1, cx, cy)
 
         return cx, cy, radius
 
@@ -90,31 +89,35 @@ class CircleFitter:
 
         # Check minimum points requirement
         if n_points < self.config.min_points:
+            logger.debug(
+                "Insufficient points for circle fitting: %d < %d",
+                n_points, self.config.min_points
+            )
             return CircleFitResult(
                 center_x=0, center_y=0, radius=0,
                 residual=float("inf"), num_points=n_points
             )
 
-        # Collect all valid circles
         valid_circles = []
 
-        # Iterate through all 3-point combinations
         for i, j, k in combinations(range(n_points), 3):
             p1, p2, p3 = points[i], points[j], points[k]
 
-            # Calculate circle from 3 points
-            result = self._circle_from_3_points(p1, p2, p3)
+            result = self._compute_circumcircle(p1, p2, p3)
             if result is None:
                 continue
 
             cx, cy, radius = result
 
-            # Check radius bounds
             if self.config.min_radius <= radius <= self.config.max_radius:
                 valid_circles.append((cx, cy, radius))
 
-        # Return failure if no valid circles found
         if not valid_circles:
+            logger.debug(
+                "No valid circles found within radius range [%.4f, %.4f]m "
+                "from %d points",
+                self.config.min_radius, self.config.max_radius, n_points
+            )
             return CircleFitResult(
                 center_x=0, center_y=0, radius=0,
                 residual=float("inf"), num_points=n_points
