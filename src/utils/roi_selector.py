@@ -7,6 +7,10 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import RectangleSelector
 import numpy as np
 
+from .logging import get_logger
+
+logger = get_logger(__name__)
+
 
 @dataclass
 class ROIBounds:
@@ -64,11 +68,11 @@ class ROISelector:
         # Check for non-interactive backend
         backend = matplotlib.get_backend()
         if backend.lower() in ("agg", "pdf", "svg", "ps"):
-            print(f"Warning: Non-interactive backend ({backend}). Using default ROI.")
+            logger.warning("Non-interactive backend (%s). Using default ROI.", backend)
             return None
 
         if len(points) == 0:
-            print("Warning: No points available for ROI preview. Using default ROI.")
+            logger.warning("No points available for ROI preview. Using default ROI.")
             return None
 
         self._points = points
@@ -156,7 +160,7 @@ class ROISelector:
                 self._confirmed = True
                 plt.close(self._fig)
             else:
-                print("Please select a valid ROI before confirming.")
+                logger.warning("Please select a valid ROI before confirming.")
 
         elif event.key == "escape":
             self._confirmed = False
@@ -177,25 +181,25 @@ class ROISelector:
             self._status_text = None
 
         if self._selected_bounds:
-            b = self._selected_bounds
+            bounds = self._selected_bounds
             # Count points inside selected area
             if self._points is not None:
                 mask = (
-                    (self._points[:, 0] >= b.x_min)
-                    & (self._points[:, 0] <= b.x_max)
-                    & (self._points[:, 1] >= b.y_min)
-                    & (self._points[:, 1] <= b.y_max)
+                    (self._points[:, 0] >= bounds.x_min)
+                    & (self._points[:, 0] <= bounds.x_max)
+                    & (self._points[:, 1] >= bounds.y_min)
+                    & (self._points[:, 1] <= bounds.y_max)
                 )
                 n_inside = int(np.sum(mask))
                 text = (
-                    f"ROI: X=[{b.x_min:.3f}, {b.x_max:.3f}]m, "
-                    f"Y=[{b.y_min:.3f}, {b.y_max:.3f}]m | "
+                    f"ROI: X=[{bounds.x_min:.3f}, {bounds.x_max:.3f}]m, "
+                    f"Y=[{bounds.y_min:.3f}, {bounds.y_max:.3f}]m | "
                     f"Points: {n_inside}/{len(self._points)}"
                 )
             else:
                 text = (
-                    f"ROI: X=[{b.x_min:.3f}, {b.x_max:.3f}]m, "
-                    f"Y=[{b.y_min:.3f}, {b.y_max:.3f}]m"
+                    f"ROI: X=[{bounds.x_min:.3f}, {bounds.x_max:.3f}]m, "
+                    f"Y=[{bounds.y_min:.3f}, {bounds.y_max:.3f}]m"
                 )
         else:
             text = "No ROI selected"
