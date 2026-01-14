@@ -6,10 +6,14 @@ from dataclasses import dataclass
 import matplotlib
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Button, Slider
+from matplotlib.widgets import Button, Slider, TextBox
 import numpy as np
 
-from .config import StructureConfig
+from .geometry import rotate_points
+from .logging import get_logger
+from .structure import StructureConfig
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -39,6 +43,9 @@ class StructureAdjuster:
         self._slider_x: Slider | None = None
         self._slider_y: Slider | None = None
         self._slider_yaw: Slider | None = None
+        self._textbox_x: TextBox | None = None
+        self._textbox_y: TextBox | None = None
+        self._textbox_yaw: TextBox | None = None
         self._btn_confirm: Button | None = None
         self._btn_cancel: Button | None = None
 
@@ -66,7 +73,7 @@ class StructureAdjuster:
         # Check for non-interactive backend
         backend = matplotlib.get_backend()
         if backend.lower() in ("agg", "pdf", "svg", "ps"):
-            print(f"Warning: Non-interactive backend ({backend}). Cannot adjust.")
+            logger.warning("Non-interactive backend (%s). Cannot adjust.", backend)
             return None
 
         self._structure_config = structure
@@ -106,10 +113,15 @@ class StructureAdjuster:
         # Set axis limits based on points and structure
         self._set_axis_limits()
 
-        # Create slider axes
-        ax_x = plt.axes([0.15, 0.15, 0.55, 0.03])
-        ax_y = plt.axes([0.15, 0.10, 0.55, 0.03])
-        ax_yaw = plt.axes([0.15, 0.05, 0.55, 0.03])
+        # Create slider axes (narrower to make room for TextBox)
+        ax_x = plt.axes([0.15, 0.15, 0.50, 0.03])
+        ax_y = plt.axes([0.15, 0.10, 0.50, 0.03])
+        ax_yaw = plt.axes([0.15, 0.05, 0.50, 0.03])
+
+        # Create TextBox axes (next to sliders)
+        ax_textbox_x = plt.axes([0.66, 0.15, 0.08, 0.03])
+        ax_textbox_y = plt.axes([0.66, 0.10, 0.08, 0.03])
+        ax_textbox_yaw = plt.axes([0.66, 0.05, 0.08, 0.03])
 
         # Calculate slider ranges based on data extent
         x_range = self._calculate_range(points[:, 0], structure.center_x)
@@ -141,14 +153,30 @@ class StructureAdjuster:
             valstep=1,
         )
 
+        # Create TextBox widgets
+        self._textbox_x = TextBox(
+            ax_textbox_x, "", initial=f"{structure.center_x:.2f}"
+        )
+        self._textbox_y = TextBox(
+            ax_textbox_y, "", initial=f"{structure.center_y:.2f}"
+        )
+        self._textbox_yaw = TextBox(
+            ax_textbox_yaw, "", initial=f"{math.degrees(structure.yaw):.1f}"
+        )
+
         # Connect slider callbacks
         self._slider_x.on_changed(self._on_slider_change)
         self._slider_y.on_changed(self._on_slider_change)
         self._slider_yaw.on_changed(self._on_slider_change)
 
+        # Connect TextBox callbacks
+        self._textbox_x.on_submit(self._on_textbox_x_submit)
+        self._textbox_y.on_submit(self._on_textbox_y_submit)
+        self._textbox_yaw.on_submit(self._on_textbox_yaw_submit)
+
         # Create buttons
-        ax_confirm = plt.axes([0.75, 0.10, 0.1, 0.04])
-        ax_cancel = plt.axes([0.75, 0.05, 0.1, 0.04])
+        ax_confirm = plt.axes([0.76, 0.10, 0.1, 0.04])
+        ax_cancel = plt.axes([0.76, 0.05, 0.1, 0.04])
         self._btn_confirm = Button(ax_confirm, "Confirm")
         self._btn_cancel = Button(ax_cancel, "Cancel")
 
@@ -182,10 +210,10 @@ class StructureAdjuster:
     ) -> tuple[float, float]:
         """Calculate appropriate slider range."""
         if len(values) == 0:
-            return (center - 2.0, center + 2.0)
+            return (center - 5.0, center + 5.0)
         v_min, v_max = float(np.min(values)), float(np.max(values))
-        margin = max(0.5, (v_max - v_min) * 0.2)
-        return (min(v_min - margin, center - 1.0), max(v_max + margin, center + 1.0))
+        margin = max(2.0, (v_max - v_min) * 0.5)
+        return (min(v_min - margin, center - 5.0), max(v_max + margin, center + 5.0))
 
     def _set_axis_limits(self) -> None:
         """Set axis limits based on points and structure."""
@@ -196,11 +224,9 @@ class StructureAdjuster:
         if cfg is None:
             return
 
-        # Get structure extent
         display_width, display_height = cfg.get_display_dimensions()
         half_w, half_h = display_width / 2, display_height / 2
 
-        # Calculate bounds including structure and points
         x_min = min(np.min(self._points[:, 0]), cfg.center_x - half_w)
         x_max = max(np.max(self._points[:, 0]), cfg.center_x + half_w)
         y_min = min(np.min(self._points[:, 1]), cfg.center_y - half_h)
@@ -211,18 +237,56 @@ class StructureAdjuster:
         self._ax.set_ylim(y_min - margin, y_max + margin)
 
     def _on_slider_change(self, val) -> None:
-        """Handle slider value change - update structure drawing."""
+        """Handle slider value change - update structure drawing and TextBoxes."""
         self._position = StructurePosition(
             center_x=self._slider_x.val,
             center_y=self._slider_y.val,
             yaw=math.radians(self._slider_yaw.val),
         )
+        # Update TextBox values to match sliders
+        if self._textbox_x is not None:
+            self._textbox_x.set_val(f"{self._slider_x.val:.2f}")
+        if self._textbox_y is not None:
+            self._textbox_y.set_val(f"{self._slider_y.val:.2f}")
+        if self._textbox_yaw is not None:
+            self._textbox_yaw.set_val(f"{self._slider_yaw.val:.1f}")
         self._draw_structure()
         self._fig.canvas.draw_idle()
 
+    def _on_textbox_x_submit(self, text: str) -> None:
+        """Handle X TextBox value submission."""
+        try:
+            value = float(text)
+            self._slider_x.set_val(value)
+        except ValueError:
+            # Invalid input - reset to current slider value
+            if self._textbox_x is not None:
+                self._textbox_x.set_val(f"{self._slider_x.val:.2f}")
+
+    def _on_textbox_y_submit(self, text: str) -> None:
+        """Handle Y TextBox value submission."""
+        try:
+            value = float(text)
+            self._slider_y.set_val(value)
+        except ValueError:
+            # Invalid input - reset to current slider value
+            if self._textbox_y is not None:
+                self._textbox_y.set_val(f"{self._slider_y.val:.2f}")
+
+    def _on_textbox_yaw_submit(self, text: str) -> None:
+        """Handle Yaw TextBox value submission."""
+        try:
+            value = float(text)
+            # Clamp to slider range
+            value = max(-180, min(180, value))
+            self._slider_yaw.set_val(value)
+        except ValueError:
+            # Invalid input - reset to current slider value
+            if self._textbox_yaw is not None:
+                self._textbox_yaw.set_val(f"{self._slider_yaw.val:.1f}")
+
     def _draw_structure(self) -> None:
         """Draw/redraw structure overlay with current position."""
-        # Remove previous patches
         for patch in self._structure_patches:
             try:
                 patch.remove()
@@ -236,11 +300,15 @@ class StructureAdjuster:
         cfg = self._structure_config
         pos = self._position
 
-        # Get dimensions
+        # Temporarily update config position for get_track_positions()
+        original_x, original_y, original_yaw = cfg.center_x, cfg.center_y, cfg.yaw
+        cfg.center_x = pos.center_x
+        cfg.center_y = pos.center_y
+        cfg.yaw = pos.yaw
+
         display_width, display_height = cfg.get_display_dimensions()
         half_w, half_h = display_width / 2, display_height / 2
 
-        # Compute rotated rectangle corners
         corners = [
             (-half_w, -half_h),
             (half_w, -half_h),
@@ -248,14 +316,8 @@ class StructureAdjuster:
             (-half_w, half_h),
         ]
 
-        cos_y, sin_y = math.cos(pos.yaw), math.sin(pos.yaw)
-        rotated = []
-        for dx, dy in corners:
-            rx = dx * cos_y - dy * sin_y + pos.center_x
-            ry = dx * sin_y + dy * cos_y + pos.center_y
-            rotated.append((rx, ry))
+        rotated = rotate_points(corners, pos.center_x, pos.center_y, pos.yaw)
 
-        # Draw concrete outline
         poly = mpatches.Polygon(
             rotated,
             fill=False,
@@ -266,40 +328,36 @@ class StructureAdjuster:
         self._ax.add_patch(poly)
         self._structure_patches.append(poly)
 
-        # Draw expected rebar positions (apply rotation to track positions)
-        spacing_x, spacing_y = cfg.get_display_track_spacing()
+        track_positions = cfg.get_track_positions()
         track_radius = cfg.track_diameter / 2
 
-        for i in range(cfg.track_count_x):
-            for j in range(cfg.track_count_y):
-                dx = (i - 0.5) * spacing_x if cfg.track_count_x == 2 else 0.0
-                dy = (j - 0.5) * spacing_y if cfg.track_count_y == 2 else 0.0
+        for x, y in track_positions:
+            circle = plt.Circle(
+                (x, y),
+                track_radius,
+                fill=False,
+                edgecolor="blue",
+                linewidth=1.5,
+                linestyle=":",
+                alpha=0.7,
+            )
+            self._ax.add_patch(circle)
+            self._structure_patches.append(circle)
 
-                x = dx * cos_y - dy * sin_y + pos.center_x
-                y = dx * sin_y + dy * cos_y + pos.center_y
+            (marker,) = self._ax.plot(
+                x,
+                y,
+                "+",
+                color="blue",
+                markersize=8,
+                markeredgewidth=1.5,
+                alpha=0.7,
+            )
+            self._structure_patches.append(marker)
 
-                circle = plt.Circle(
-                    (x, y),
-                    track_radius,
-                    fill=False,
-                    edgecolor="blue",
-                    linewidth=1.5,
-                    linestyle=":",
-                    alpha=0.7,
-                )
-                self._ax.add_patch(circle)
-                self._structure_patches.append(circle)
-
-                (marker,) = self._ax.plot(
-                    x,
-                    y,
-                    "+",
-                    color="blue",
-                    markersize=8,
-                    markeredgewidth=1.5,
-                    alpha=0.7,
-                )
-                self._structure_patches.append(marker)
+        cfg.center_x = original_x
+        cfg.center_y = original_y
+        cfg.yaw = original_yaw
 
     def _on_confirm(self, event) -> None:
         """Handle confirm button click."""
