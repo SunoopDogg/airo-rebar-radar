@@ -2,8 +2,6 @@
 
 import math
 
-import numpy as np
-
 
 def rotate_and_translate(
     dx: float,
@@ -75,25 +73,3 @@ def calculate_distance(
         Euclidean distance between the points
     """
     return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
-
-
-def calculate_distance_np(
-    x1: float,
-    y1: float,
-    x2: float,
-    y2: float,
-) -> float:
-    """Calculate Euclidean distance using numpy (for consistency with numpy code).
-
-    Args:
-        x1: X coordinate of first point
-        y1: Y coordinate of first point
-        x2: X coordinate of second point
-        y2: Y coordinate of second point
-
-    Returns:
-        Euclidean distance between the points
-    """
-    return float(np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2))
-
-
