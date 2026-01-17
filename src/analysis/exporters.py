@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pandas as pd
 
-from .pipeline import FrameResult
-from .temporal_filter import Track
-from .utils.logging import get_logger
+from ..core.pipeline import FrameResult
+from ..core.temporal_filter import Track
+from ..config.logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -110,8 +110,9 @@ class CSVExporter(ResultsExporter):
             logger.warning("No tracks to export to %s", output_path)
             return False
 
-        rows = [
-            {
+        rows = []
+        for t in tracks:
+            row = {
                 "track_id": t.track_id,
                 "center_x": t.center_x,
                 "center_y": t.center_y,
@@ -119,8 +120,11 @@ class CSVExporter(ResultsExporter):
                 "hits": t.hits,
                 "age": t.age,
             }
-            for t in tracks
-        ]
+            for interval_idx, avg in t.interval_averages.items():
+                row[f"{interval_idx}0_center_x"] = avg["center_x"]
+                row[f"{interval_idx}0_center_y"] = avg["center_y"]
+                row[f"{interval_idx}0_radius"] = avg["radius"]
+            rows.append(row)
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
         pd.DataFrame(rows).to_csv(output_path, index=False)
@@ -200,6 +204,7 @@ class JSONExporter(ResultsExporter):
                 "radius": t.radius,
                 "hits": t.hits,
                 "age": t.age,
+                "interval_averages": t.interval_averages,
             }
             for t in tracks
         ]
