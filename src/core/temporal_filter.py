@@ -5,8 +5,8 @@ from dataclasses import dataclass, field
 import numpy as np
 from filterpy.kalman import KalmanFilter
 
-from .utils.config import KalmanFilterConfig
-from .utils.geometry import calculate_distance_np
+from ..config.settings import KalmanFilterConfig
+from ..structure.geometry import calculate_distance
 
 
 @dataclass
@@ -20,6 +20,8 @@ class Track:
     hits: int = 1  # Number of successful associations
     misses: int = 0  # Number of consecutive misses
     kalman_filter: KalmanFilter | None = field(default=None, repr=False)
+    # key: interval_idx (0, 1, 2, ...), value: {"center_x": float, "center_y": float, "radius": float}
+    interval_averages: dict[int, dict[str, float]] = field(default_factory=dict)
 
 
 class TemporalFilter:
@@ -114,7 +116,7 @@ class TemporalFilter:
             Euclidean distance between predicted and detected positions
         """
         det_x, det_y, _ = detection
-        return calculate_distance_np(track.center_x, track.center_y, det_x, det_y)
+        return calculate_distance(track.center_x, track.center_y, det_x, det_y)
 
     def _associate_detections_greedy(
         self,
