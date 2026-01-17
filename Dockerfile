@@ -23,7 +23,7 @@ RUN apt-get install -y --no-install-recommends \
         libgtk2.0-dev \
         tk
 
-# uv installation
+# uv (Python)
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Clean up
