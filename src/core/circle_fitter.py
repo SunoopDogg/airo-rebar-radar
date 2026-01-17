@@ -5,9 +5,9 @@ from itertools import combinations
 
 import numpy as np
 
-from .utils.config import CircleFittingConfig
-from .utils.geometry import calculate_distance_np
-from .utils.logging import get_logger
+from ..config.settings import CircleFittingConfig
+from ..structure.geometry import calculate_distance
+from ..config.logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -69,7 +69,7 @@ class CircleFitter:
         cx = (mag_sq_1 * (y2 - y3) + mag_sq_2 * (y3 - y1) + mag_sq_3 * (y1 - y2)) / denominator
         cy = (mag_sq_1 * (x3 - x2) + mag_sq_2 * (x1 - x3) + mag_sq_3 * (x2 - x1)) / denominator
 
-        radius = calculate_distance_np(x1, y1, cx, cy)
+        radius = calculate_distance(x1, y1, cx, cy)
 
         return cx, cy, radius
 
