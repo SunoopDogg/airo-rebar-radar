@@ -3,8 +3,8 @@
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 
-from .utils.geometry import rotate_points
-from .utils.structure import StructureConfig
+from ..structure.geometry import rotate_points
+from ..structure.config import StructureConfig
 
 
 class StructureRenderer:
