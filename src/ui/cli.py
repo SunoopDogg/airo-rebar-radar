@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from .structure import (
+from ..structure.config import (
     Orientation,
     StructureConfig,
     StructureType,

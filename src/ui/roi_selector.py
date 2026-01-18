@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import RectangleSelector
 import numpy as np
 
-from .logging import get_logger
+from ..config.logging import get_logger
 
 logger = get_logger(__name__)
 
