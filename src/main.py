@@ -2,17 +2,21 @@
 
 from pathlib import Path
 
+import json
 import numpy as np
 import pandas as pd
 
-from .exporters import create_exporter
-from .pipeline import ProcessingPipeline, ProcessingResult
-from .utils.cli import select_csv_file, select_structure_type
-from .utils.config import Config
-from .utils.io_handler import IOHandler
-from .utils.roi_selector import ROIBounds, ROISelector
-from .utils.structure_adjuster import StructureAdjuster
-from .visualizer import Visualizer
+from .analysis.exporters import create_exporter
+from .core.pipeline import ProcessingPipeline, ProcessingResult
+from .core.preprocessor import Preprocessor
+from .ui.cli import select_csv_file, select_structure_type
+from .config.settings import Config
+from .config.io_handler import IOHandler
+from .ui.roi_selector import ROIBounds, ROISelector
+from .ui.structure_adjuster import StructureAdjuster
+
+from .analysis.convergence_analyzer import ConvergenceAnalyzer, ConvergenceThresholds
+from .visualization.visualizer import Visualizer
 
 
 def _select_and_load_file(config: Config) -> tuple[Path, pd.DataFrame, np.ndarray] | None:
@@ -92,14 +96,9 @@ def _filter_points_by_roi(
     Returns:
         Filtered points within ROI
     """
-    roi = config.preprocessing
-    roi_mask = (
-        (all_points[:, 0] >= (roi.roi_x_min or -float("inf")))
-        & (all_points[:, 0] <= (roi.roi_x_max or float("inf")))
-        & (all_points[:, 1] >= (roi.roi_y_min or -float("inf")))
-        & (all_points[:, 1] <= (roi.roi_y_max or float("inf")))
-    )
-    return all_points[roi_mask]
+    preprocessor = Preprocessor(config.preprocessing)
+    filtered_points, _ = preprocessor.filter_by_region(all_points)
+    return filtered_points
 
 
 def _adjust_structure_position(
@@ -151,19 +150,37 @@ def _save_results(
     """
     print("\nSaving results...")
 
+    # Create subdirectory based on file stem
+    results_subdir = config.results_dir / result.file_stem
+    results_subdir.mkdir(parents=True, exist_ok=True)
+
     # Create exporter based on config
     exporter = create_exporter(config.export_format)
     ext = "json" if config.export_format.lower() == "json" else "csv"
 
     # Export detections
-    detections_path = config.results_dir / f"{result.file_stem}_detections.{ext}"
+    detections_path = results_subdir / f"{result.file_stem}_detections.{ext}"
     if exporter.export_detections(detections_path, result.frame_results):
-        print(f"  Saved: {detections_path.name}")
+        print(f"  Saved: {detections_path.relative_to(config.output_dir)}")
 
     # Export tracks
-    tracks_path = config.results_dir / f"{result.file_stem}_tracks.{ext}"
+    tracks_path = results_subdir / f"{result.file_stem}_tracks.{ext}"
     if exporter.export_tracks(tracks_path, result.stable_tracks):
-        print(f"  Saved: {tracks_path.name}")
+        print(f"  Saved: {tracks_path.relative_to(config.output_dir)}")
+
+
+def _save_convergence_json(
+    summary: dict,
+    save_path: Path,
+) -> None:
+    """Save convergence summary to JSON file.
+
+    Args:
+        summary: Summary dictionary from ConvergenceAnalyzer.get_summary()
+        save_path: Path to save the JSON file
+    """
+    with open(save_path, "w", encoding="utf-8") as f:
+        json.dump(summary, f, indent=2, ensure_ascii=False)
 
 
 def _generate_visualizations(
@@ -181,14 +198,20 @@ def _generate_visualizations(
         file_name: Name of the file for display
     """
     print("\nGenerating visualizations...")
-    visualizer = Visualizer(config.plots_dir, config.visualization)
+
+    # Create subdirectory based on file stem
+    plots_subdir = config.plots_dir / result.file_stem
+    plots_subdir.mkdir(parents=True, exist_ok=True)
+
+    visualizer = Visualizer(plots_subdir, config.visualization)
 
     # Raw points plot
     visualizer.plot_raw_points(
         points=all_points,
-        save_path=config.plots_dir / f"{result.file_stem}_raw_points.png",
+        save_path=plots_subdir / f"{result.file_stem}_raw_points.png",
     )
-    print(f"  Saved: {result.file_stem}_raw_points.png")
+    print(
+        f"  Saved: {(plots_subdir / f'{result.file_stem}_raw_points.png').relative_to(config.output_dir)}")
 
     # Per-frame plots (optional)
     if config.visualization.save_frame_plots:
@@ -200,16 +223,17 @@ def _generate_visualizations(
                     frame_result.fit_results,
                     config.structure,
                     title=f"Frame {frame_result.frame_id} - Detection",
-                    save_path=config.plots_dir / f"frame_{frame_result.frame_id:04d}_detection.png",
+                    save_path=plots_subdir / f"frame_{frame_result.frame_id:04d}_detection.png",
                 )
 
     # Detection summary plot
     visualizer.plot_detection_summary(
         result.frame_results,
         title=f"Detection Summary - {file_name}",
-        save_path=config.plots_dir / f"{result.file_stem}_summary.png",
+        save_path=plots_subdir / f"{result.file_stem}_summary.png",
     )
-    print(f"  Saved: {result.file_stem}_summary.png")
+    print(
+        f"  Saved: {(plots_subdir / f'{result.file_stem}_summary.png').relative_to(config.output_dir)}")
 
     # Stable tracks plot
     if result.stable_tracks:
@@ -223,22 +247,43 @@ def _generate_visualizations(
             structure=config.structure,
             distance_errors=distance_errors,
             title=f"Stable Tracks - {file_name}",
-            save_path=config.plots_dir / f"{result.file_stem}_stable_tracks.png",
+            save_path=plots_subdir / f"{result.file_stem}_stable_tracks.png",
         )
-        print(f"  Saved: {result.file_stem}_stable_tracks.png")
+        print(
+            f"  Saved: {(plots_subdir / f'{result.file_stem}_stable_tracks.png').relative_to(config.output_dir)}")
 
+        # Convergence analysis plot
+        convergence_analyzer = ConvergenceAnalyzer()
+        metrics = convergence_analyzer.analyze_tracks(result.stable_tracks)
 
-def _print_summary(result: ProcessingResult) -> None:
-    """Print processing summary.
+        if metrics:
+            visualizer.plot_position_convergence(
+                metrics,
+                title=f"Position Convergence - {file_name}",
+                save_path=plots_subdir / f"{result.file_stem}_convergence_position.png",
+            )
+            visualizer.plot_radius_convergence(
+                metrics,
+                title=f"Radius Convergence - {file_name}",
+                save_path=plots_subdir / f"{result.file_stem}_convergence_radius.png",
+            )
+            print(
+                f"  Saved: {(plots_subdir / f'{result.file_stem}_convergence_position.png').relative_to(config.output_dir)}")
+            print(
+                f"  Saved: {(plots_subdir / f'{result.file_stem}_convergence_radius.png').relative_to(config.output_dir)}")
 
-    Args:
-        result: Processing result containing results
-    """
-    print("=" * 50)
-    print("Summary:")
-    print(f"  Frames: {result.n_frames}")
-    print(f"  Total detections: {result.total_detections}")
-    print(f"  Stable tracks: {result.n_stable_tracks}")
+            # Convergence summary (console output and JSON)
+            thresholds = ConvergenceThresholds(
+                position_threshold_mm=config.convergence.position_threshold_mm,
+                radius_threshold_mm=config.convergence.radius_threshold_mm,
+                consecutive_intervals=config.convergence.consecutive_intervals,
+            )
+            summary = convergence_analyzer.get_summary(metrics, thresholds)
+
+            # Save JSON
+            json_path = plots_subdir / f"{result.file_stem}_convergence_summary.json"
+            _save_convergence_json(summary, json_path)
+            print(f"  Saved: {json_path.relative_to(config.output_dir)}")
 
 
 def main():
@@ -282,9 +327,6 @@ def main():
 
     # Step 6: Generate visualizations
     _generate_visualizations(config, result, all_points, selected_file.name)
-
-    # Step 7: Print summary
-    _print_summary(result)
 
 
 if __name__ == "__main__":

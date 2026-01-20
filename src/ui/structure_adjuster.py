@@ -9,9 +9,9 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Button, Slider, TextBox
 import numpy as np
 
-from .geometry import rotate_points
-from .logging import get_logger
-from .structure import StructureConfig
+from ..structure.geometry import rotate_points
+from ..config.logging import get_logger
+from ..structure.config import StructureConfig
 
 logger = get_logger(__name__)
 
@@ -128,29 +128,14 @@ class StructureAdjuster:
         y_range = self._calculate_range(points[:, 1], structure.center_y)
 
         # Create sliders
-        self._slider_x = Slider(
-            ax_x,
-            "Center X (m)",
-            x_range[0],
-            x_range[1],
-            valinit=structure.center_x,
-            valstep=0.01,
+        self._slider_x = self._create_slider(
+            ax_x, "Center X (m)", x_range[0], x_range[1], structure.center_x, 0.01
         )
-        self._slider_y = Slider(
-            ax_y,
-            "Center Y (m)",
-            y_range[0],
-            y_range[1],
-            valinit=structure.center_y,
-            valstep=0.01,
+        self._slider_y = self._create_slider(
+            ax_y, "Center Y (m)", y_range[0], y_range[1], structure.center_y, 0.01
         )
-        self._slider_yaw = Slider(
-            ax_yaw,
-            "Yaw (deg)",
-            -180,
-            180,
-            valinit=math.degrees(structure.yaw),
-            valstep=1,
+        self._slider_yaw = self._create_slider(
+            ax_yaw, "Yaw (deg)", -180, 180, math.degrees(structure.yaw), 1
         )
 
         # Create TextBox widgets
@@ -214,6 +199,30 @@ class StructureAdjuster:
         v_min, v_max = float(np.min(values)), float(np.max(values))
         margin = max(2.0, (v_max - v_min) * 0.5)
         return (min(v_min - margin, center - 5.0), max(v_max + margin, center + 5.0))
+
+    def _create_slider(
+        self,
+        ax: plt.Axes,
+        label: str,
+        val_min: float,
+        val_max: float,
+        valinit: float,
+        valstep: float,
+    ) -> Slider:
+        """Create a slider widget with common settings.
+
+        Args:
+            ax: Axes for the slider
+            label: Slider label
+            val_min: Minimum value
+            val_max: Maximum value
+            valinit: Initial value
+            valstep: Step value
+
+        Returns:
+            Configured Slider widget
+        """
+        return Slider(ax, label, val_min, val_max, valinit=valinit, valstep=valstep)
 
     def _set_axis_limits(self) -> None:
         """Set axis limits based on points and structure."""

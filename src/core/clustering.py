@@ -3,7 +3,7 @@
 import numpy as np
 from sklearn.cluster import DBSCAN
 
-from .utils.config import ClusteringConfig
+from ..config.settings import ClusteringConfig
 
 
 class Clusterer:

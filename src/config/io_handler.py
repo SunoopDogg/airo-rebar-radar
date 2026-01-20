@@ -21,4 +21,3 @@ class IOHandler:
         df = pd.read_csv(file_path)
         df.columns = df.columns.str.strip()
         return df
-

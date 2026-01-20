@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from .geometry import calculate_distance
-from .track_position_calculator import TrackPositionCalculator
+from .position_calculator import TrackPositionCalculator
 
 
 class Orientation(Enum):

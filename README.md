@@ -66,45 +66,14 @@ uv sync
 ### uv 사용 시
 
 ```bash
-# 대화형 파이프라인 실행
 uv run python -m src.main
-
-# 명시적 경로 지정
-uv run python -m src.main -i csv/ -o output/
-
-# 시각화 생략
-uv run python -m src.main --no-visualize
-
-# 결과 저장 생략
-uv run python -m src.main --no-save
 ```
 
 ### Conda / venv 사용 시
 
 ```bash
-# 대화형 파이프라인 실행
 python -m src.main
-
-# 명시적 경로 지정
-python -m src.main -i csv/ -o output/
-
-# 시각화 생략
-python -m src.main --no-visualize
-
-# 결과 저장 생략
-python -m src.main --no-save
 ```
-
----
-
-## CLI 옵션
-
-| 옵션 | 설명 |
-|------|------|
-| `-i, --input` | 입력 CSV 파일/디렉토리 경로 |
-| `-o, --output` | 출력 디렉토리 경로 |
-| `--no-visualize` | 시각화 플롯 생성 생략 |
-| `--no-save` | 결과 파일 저장 생략 |
 
 ---
 

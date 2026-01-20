@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .structure import StructureConfig
+from ..structure.config import StructureConfig
 
 
 @dataclass
@@ -80,14 +80,23 @@ class VisualizationConfig:
     figure_size_standard: tuple[int, int] = (10, 8)  # Standard figure size
     figure_size_large: tuple[int, int] = (12, 10)  # Large figure size
     figure_size_summary: tuple[int, int] = (14, 5)  # Summary figure size
+    figure_size_convergence: tuple[int, int] = (14, 5)
     mm_per_meter: int = 1000  # Conversion factor for display
-    save_frame_plots: bool = True  # Whether to save individual frame plots
+    save_frame_plots: bool = False  # Whether to save individual frame plots
 
 
 @dataclass
 class ProcessingConfig:
     """Configuration for processing behavior."""
     progress_log_interval: int = 10  # Log progress every N frames
+
+
+@dataclass
+class ConvergenceConfig:
+    """Configuration for convergence analysis."""
+    position_threshold_mm: float = 0.04  # Position change threshold (mm)
+    radius_threshold_mm: float = 0.002  # Radius change threshold (mm)
+    consecutive_intervals: int = 5  # Number of consecutive intervals for convergence
 
 
 @dataclass
@@ -111,6 +120,7 @@ class Config:
     visualization: VisualizationConfig = field(default_factory=VisualizationConfig)
     processing: ProcessingConfig = field(default_factory=ProcessingConfig)
     structure: StructureConfig = field(default_factory=StructureConfig)
+    convergence: ConvergenceConfig = field(default_factory=ConvergenceConfig)
 
     def __post_init__(self):
         """Ensure output directories exist."""
