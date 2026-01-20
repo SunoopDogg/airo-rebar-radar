@@ -3,6 +3,7 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
+from typing import NamedTuple
 
 import numpy as np
 import pandas as pd
@@ -11,8 +12,17 @@ from .circle_fitter import CircleFitResult, CircleFitter
 from .clustering import Clusterer
 from .preprocessor import Preprocessor
 from .temporal_filter import TemporalFilter, Track
-from .utils.config import Config
-from .utils.io_handler import IOHandler
+from ..config.settings import Config
+from ..config.io_handler import IOHandler
+
+
+class DetectionWithFrame(NamedTuple):
+    """Detection data with associated frame index."""
+
+    center_x: float
+    center_y: float
+    radius: float
+    frame_idx: int
 
 
 @dataclass
@@ -144,27 +154,33 @@ class ProcessingPipeline:
         distance_threshold = self.config.tracking.distance_threshold
         min_detections = self.config.tracking.min_track_detections
 
-        all_detections: list[tuple[float, float, float]] = []
-        for frame_result in frame_results:
+        # Collect detections with frame indices
+        all_detections: list[DetectionWithFrame] = []
+        for frame_idx, frame_result in enumerate(frame_results):
             for det in frame_result.detections:
                 all_detections.append(
-                    (det["center_x"], det["center_y"], det["radius"])
+                    DetectionWithFrame(
+                        center_x=det["center_x"],
+                        center_y=det["center_y"],
+                        radius=det["radius"],
+                        frame_idx=frame_idx,
+                    )
                 )
 
         if not all_detections:
             return []
 
-        groups: list[list[tuple[float, float, float]]] = []
+        # Group detections by spatial proximity
+        groups: list[list[DetectionWithFrame]] = []
 
         for det in all_detections:
-            det_x, det_y, det_r = det
             assigned = False
 
             for group in groups:
-                avg_x = np.mean([d[0] for d in group])
-                avg_y = np.mean([d[1] for d in group])
+                avg_x = np.mean([d.center_x for d in group])
+                avg_y = np.mean([d.center_y for d in group])
 
-                distance = np.sqrt((det_x - avg_x) ** 2 + (det_y - avg_y) ** 2)
+                distance = np.sqrt((det.center_x - avg_x) ** 2 + (det.center_y - avg_y) ** 2)
                 if distance <= distance_threshold:
                     group.append(det)
                     assigned = True
@@ -173,14 +189,29 @@ class ProcessingPipeline:
             if not assigned:
                 groups.append([det])
 
+        FRAME_INTERVAL = 10
         tracks: list[Track] = []
         for track_id, group in enumerate(groups):
             if len(group) < min_detections:
                 continue
 
-            avg_x = float(np.mean([d[0] for d in group]))
-            avg_y = float(np.mean([d[1] for d in group]))
-            avg_r = float(np.mean([d[2] for d in group]))
+            avg_x = float(np.mean([d.center_x for d in group]))
+            avg_y = float(np.mean([d.center_y for d in group]))
+            avg_r = float(np.mean([d.radius for d in group]))
+
+            max_frame = max(d.frame_idx for d in group)
+
+            interval_averages: dict[int, dict[str, float]] = {}
+            for interval_idx in range((max_frame // FRAME_INTERVAL) + 1):
+                cutoff_frame = (interval_idx + 1) * FRAME_INTERVAL - 1
+                cumulative_dets = [d for d in group if d.frame_idx <= cutoff_frame]
+
+                if cumulative_dets:
+                    interval_averages[interval_idx] = {
+                        "center_x": float(np.mean([d.center_x for d in cumulative_dets])),
+                        "center_y": float(np.mean([d.center_y for d in cumulative_dets])),
+                        "radius": float(np.mean([d.radius for d in cumulative_dets])),
+                    }
 
             track = Track(
                 track_id=track_id,
@@ -188,6 +219,7 @@ class ProcessingPipeline:
                 center_y=avg_y,
                 radius=avg_r,
                 hits=len(group),
+                interval_averages=interval_averages,
             )
             tracks.append(track)
 

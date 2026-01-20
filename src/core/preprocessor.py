@@ -3,8 +3,8 @@
 import numpy as np
 import pandas as pd
 
-from .utils.config import PreprocessingConfig
-from .utils.logging import get_logger
+from ..config.settings import PreprocessingConfig
+from ..config.logging import get_logger
 
 logger = get_logger(__name__)
 

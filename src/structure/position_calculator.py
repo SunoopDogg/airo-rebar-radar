@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from .geometry import rotate_and_translate
 
 if TYPE_CHECKING:
-    from .structure import Orientation, StructureType
+    from .config import Orientation, StructureType
 
 
 class TrackPositionCalculator:
@@ -95,7 +95,7 @@ class TrackPositionCalculator:
         Returns:
             List of (x, y) tuples for track positions
         """
-        from .structure import Orientation
+        from .config import Orientation
 
         positions = []
 
@@ -148,7 +148,7 @@ class TrackPositionCalculator:
         Returns:
             List of (x, y) tuples for track positions
         """
-        from .structure import Orientation
+        from .config import Orientation
 
         positions = []
 
@@ -210,7 +210,7 @@ class TrackPositionCalculator:
         Returns:
             List of (x, y) tuples for track positions
         """
-        from .structure import Orientation
+        from .config import Orientation
 
         positions = []
 

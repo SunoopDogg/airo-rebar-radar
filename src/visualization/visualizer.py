@@ -6,14 +6,15 @@ from typing import TYPE_CHECKING
 import matplotlib.pyplot as plt
 import numpy as np
 
-from .circle_fitter import CircleFitResult
+from ..core.circle_fitter import CircleFitResult
+from ..analysis.convergence_analyzer import ConvergenceMetrics
 from .structure_renderer import StructureRenderer, create_structure_legend_elements
-from .temporal_filter import Track
-from .utils.config import VisualizationConfig
-from .utils.structure import StructureConfig
+from ..core.temporal_filter import Track
+from ..config.settings import VisualizationConfig
+from ..structure.config import StructureConfig
 
 if TYPE_CHECKING:
-    from .pipeline import FrameResult
+    from ..core.pipeline import FrameResult
 
 
 class Visualizer:
@@ -319,3 +320,135 @@ class Visualizer:
 
         plt.suptitle(title, fontsize=14, fontweight="bold")
         self._finalize_plot(fig, save_path, show)
+
+    def _plot_convergence(
+        self,
+        metrics: list[ConvergenceMetrics],
+        convergence_attr: str,
+        value_attrs: list[str],
+        rate_ylabel: str,
+        rate_title: str,
+        value_ylabel: str,
+        value_title: str,
+        title: str,
+        save_path: Path | None,
+        show: bool,
+    ) -> None:
+        """Common convergence plotting logic.
+
+        Args:
+            metrics: List of ConvergenceMetrics objects
+            convergence_attr: Attribute name for convergence rate data
+            value_attrs: List of attribute names for value data
+            rate_ylabel: Y-axis label for convergence rate plot
+            rate_title: Title for convergence rate subplot
+            value_ylabel: Y-axis label for value plot
+            value_title: Title for value subplot
+            title: Main plot title
+            save_path: Path to save figure
+            show: Whether to display the plot
+        """
+        if not metrics:
+            return
+
+        fig, axes = plt.subplots(2, 1, figsize=self.config.figure_size_convergence)
+
+        # (0) Convergence rate plot
+        for m in metrics:
+            convergence_data = getattr(m, convergence_attr)
+            if convergence_data:
+                axes[0].plot(
+                    m.intervals[1:], convergence_data,
+                    linewidth=1, label=f"Track {m.track_id}"
+                )
+        axes[0].set_xlabel("Interval")
+        axes[0].set_ylabel(rate_ylabel)
+        axes[0].set_title(rate_title)
+        axes[0].legend()
+        axes[0].grid(True, alpha=0.3)
+
+        # (1) Value plot
+        linestyles = ["-", "--", ":", "-."]
+        for m in metrics:
+            if m.intervals:
+                for i, attr in enumerate(value_attrs):
+                    values = getattr(m, attr)
+                    suffix = f" {attr.split('_')[-1].upper()}" if len(value_attrs) > 1 else ""
+                    axes[1].plot(
+                        m.intervals, values,
+                        linestyle=linestyles[i % len(linestyles)],
+                        linewidth=1,
+                        label=f"Track {m.track_id}{suffix}"
+                    )
+        axes[1].set_xlabel("Interval")
+        axes[1].set_ylabel(value_ylabel)
+        axes[1].set_title(value_title)
+        axes[1].legend()
+        axes[1].grid(True, alpha=0.3)
+
+        plt.suptitle(title, fontsize=14, fontweight="bold")
+        self._finalize_plot(fig, save_path, show)
+
+    def plot_position_convergence(
+        self,
+        metrics: list[ConvergenceMetrics],
+        title: str = "Position Convergence",
+        save_path: Path | None = None,
+        show: bool = False
+    ) -> None:
+        """Plot position convergence analysis results.
+
+        Creates a 2x1 subplot with:
+        - (0) Position convergence rate (mm) vs interval
+        - (1) Position values over intervals (center_x, center_y)
+
+        Args:
+            metrics: List of ConvergenceMetrics objects
+            title: Plot title
+            save_path: Path to save figure
+            show: Whether to display the plot
+        """
+        self._plot_convergence(
+            metrics=metrics,
+            convergence_attr="position_convergence",
+            value_attrs=["center_x_values", "center_y_values"],
+            rate_ylabel="Position Change (mm)",
+            rate_title="Position Convergence Rate (mm)",
+            value_ylabel="Position (m)",
+            value_title="Position Values Over Intervals",
+            title=title,
+            save_path=save_path,
+            show=show,
+        )
+
+    def plot_radius_convergence(
+        self,
+        metrics: list[ConvergenceMetrics],
+        title: str = "Radius Convergence",
+        save_path: Path | None = None,
+        show: bool = False
+    ) -> None:
+        """Plot radius convergence analysis results.
+
+        Creates a 2x1 subplot with:
+        - (0) Radius convergence rate (mm) vs interval
+        - (1) Radius values over intervals
+
+        Args:
+            metrics: List of ConvergenceMetrics objects
+            title: Plot title
+            save_path: Path to save figure
+            show: Whether to display the plot
+        """
+        self._plot_convergence(
+            metrics=metrics,
+            convergence_attr="radius_convergence",
+            value_attrs=["radius_values"],
+            rate_ylabel="Radius Change (mm)",
+            rate_title="Radius Convergence Rate (mm)",
+            value_ylabel="Radius (m)",
+            value_title="Radius Values Over Intervals",
+            title=title,
+            save_path=save_path,
+            show=show,
+        )
