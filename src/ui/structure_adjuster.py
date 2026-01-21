@@ -129,10 +129,10 @@ class StructureAdjuster:
 
         # Create sliders
         self._slider_x = self._create_slider(
-            ax_x, "Center X (m)", x_range[0], x_range[1], structure.center_x, 0.01
+            ax_x, "Center X (m)", x_range[0], x_range[1], structure.center_x, 0.001
         )
         self._slider_y = self._create_slider(
-            ax_y, "Center Y (m)", y_range[0], y_range[1], structure.center_y, 0.01
+            ax_y, "Center Y (m)", y_range[0], y_range[1], structure.center_y, 0.001
         )
         self._slider_yaw = self._create_slider(
             ax_yaw, "Yaw (deg)", -180, 180, math.degrees(structure.yaw), 1
@@ -140,10 +140,10 @@ class StructureAdjuster:
 
         # Create TextBox widgets
         self._textbox_x = TextBox(
-            ax_textbox_x, "", initial=f"{structure.center_x:.2f}"
+            ax_textbox_x, "", initial=f"{structure.center_x:.3f}"
         )
         self._textbox_y = TextBox(
-            ax_textbox_y, "", initial=f"{structure.center_y:.2f}"
+            ax_textbox_y, "", initial=f"{structure.center_y:.3f}"
         )
         self._textbox_yaw = TextBox(
             ax_textbox_yaw, "", initial=f"{math.degrees(structure.yaw):.1f}"
@@ -254,9 +254,9 @@ class StructureAdjuster:
         )
         # Update TextBox values to match sliders
         if self._textbox_x is not None:
-            self._textbox_x.set_val(f"{self._slider_x.val:.2f}")
+            self._textbox_x.set_val(f"{self._slider_x.val:.3f}")
         if self._textbox_y is not None:
-            self._textbox_y.set_val(f"{self._slider_y.val:.2f}")
+            self._textbox_y.set_val(f"{self._slider_y.val:.3f}")
         if self._textbox_yaw is not None:
             self._textbox_yaw.set_val(f"{self._slider_yaw.val:.1f}")
         self._draw_structure()
@@ -270,7 +270,7 @@ class StructureAdjuster:
         except ValueError:
             # Invalid input - reset to current slider value
             if self._textbox_x is not None:
-                self._textbox_x.set_val(f"{self._slider_x.val:.2f}")
+                self._textbox_x.set_val(f"{self._slider_x.val:.3f}")
 
     def _on_textbox_y_submit(self, text: str) -> None:
         """Handle Y TextBox value submission."""
@@ -280,7 +280,7 @@ class StructureAdjuster:
         except ValueError:
             # Invalid input - reset to current slider value
             if self._textbox_y is not None:
-                self._textbox_y.set_val(f"{self._slider_y.val:.2f}")
+                self._textbox_y.set_val(f"{self._slider_y.val:.3f}")
 
     def _on_textbox_yaw_submit(self, text: str) -> None:
         """Handle Yaw TextBox value submission."""
