@@ -17,10 +17,10 @@ class Orientation(Enum):
 class StructureType(Enum):
     """Structure type for different rebar arrangements."""
 
-    COLUMN = "column"  # legacy: 2x2 grid column
     PPVC_LINEAR = "ppvc_linear"  # linear: 4 rebars at 1M spacing
     PPVC_CLUSTER_2 = "ppvc_cluster_2"  # cluster type 2: 2 rebars per cluster
     PPVC_CLUSTER_4 = "ppvc_cluster_4"  # cluster type 4: 4 rebars per cluster
+    COLUMN = "column"  # legacy: 2x2 grid column
 
 
 @dataclass
