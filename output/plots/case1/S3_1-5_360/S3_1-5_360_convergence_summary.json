@@ -1,0 +1,76 @@
+{
+  "total_count": 6,
+  "thresholds": {
+    "position_threshold_mm": 0.04,
+    "radius_threshold_mm": 0.002,
+    "consecutive_intervals": 5
+  },
+  "summary": {
+    "position_converged_count": 4,
+    "radius_converged_count": 5,
+    "fully_converged_count": 4,
+    "avg_position_convergence_interval": 75.75,
+    "avg_radius_convergence_interval": 81.0
+  },
+  "optimal_thresholds": {
+    "position_threshold_mm": 0.04901246411505206,
+    "radius_threshold_mm": 0.0014082635612102383,
+    "consecutive_intervals": 5
+  },
+  "tracks": [
+    {
+      "track_id": 0,
+      "position_converged": true,
+      "position_convergence_interval": 95,
+      "radius_converged": true,
+      "radius_convergence_interval": 77,
+      "final_position_change_mm": 0.029579890013235452,
+      "final_radius_change_mm": 0.0003390660350752195
+    },
+    {
+      "track_id": 1,
+      "position_converged": false,
+      "position_convergence_interval": null,
+      "radius_converged": true,
+      "radius_convergence_interval": 81,
+      "final_position_change_mm": 0.004414256428868965,
+      "final_radius_change_mm": 0.0005892577581087521
+    },
+    {
+      "track_id": 2,
+      "position_converged": true,
+      "position_convergence_interval": 55,
+      "radius_converged": true,
+      "radius_convergence_interval": 109,
+      "final_position_change_mm": 0.003282948240519084,
+      "final_radius_change_mm": 0.0011692414565306342
+    },
+    {
+      "track_id": 3,
+      "position_converged": true,
+      "position_convergence_interval": 96,
+      "radius_converged": true,
+      "radius_convergence_interval": 81,
+      "final_position_change_mm": 0.1768272320600977,
+      "final_radius_change_mm": 0.008147392106631901
+    },
+    {
+      "track_id": 4,
+      "position_converged": true,
+      "position_convergence_interval": 57,
+      "radius_converged": true,
+      "radius_convergence_interval": 57,
+      "final_position_change_mm": 3.480338730329053,
+      "final_radius_change_mm": 0.00795938654622047
+    },
+    {
+      "track_id": 5,
+      "position_converged": false,
+      "position_convergence_interval": null,
+      "radius_converged": false,
+      "radius_convergence_interval": null,
+      "final_position_change_mm": 1.6063494687967412,
+      "final_radius_change_mm": 0.15991599826360725
+    }
+  ]
+}

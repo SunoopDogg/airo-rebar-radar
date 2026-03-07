@@ -1,0 +1,67 @@
+{
+  "total_count": 5,
+  "thresholds": {
+    "position_threshold_mm": 0.04,
+    "radius_threshold_mm": 0.002,
+    "consecutive_intervals": 5
+  },
+  "summary": {
+    "position_converged_count": 3,
+    "radius_converged_count": 4,
+    "fully_converged_count": 3,
+    "avg_position_convergence_interval": 76.0,
+    "avg_radius_convergence_interval": 64.25
+  },
+  "optimal_thresholds": {
+    "position_threshold_mm": 0.06424806643026551,
+    "radius_threshold_mm": 0.002301085681209653,
+    "consecutive_intervals": 5
+  },
+  "tracks": [
+    {
+      "track_id": 0,
+      "position_converged": false,
+      "position_convergence_interval": null,
+      "radius_converged": true,
+      "radius_convergence_interval": 70,
+      "final_position_change_mm": 0.06455166912222558,
+      "final_radius_change_mm": 0.0034687592256714417
+    },
+    {
+      "track_id": 1,
+      "position_converged": true,
+      "position_convergence_interval": 103,
+      "radius_converged": true,
+      "radius_convergence_interval": 74,
+      "final_position_change_mm": 0.038189238258487905,
+      "final_radius_change_mm": 0.0012393526751391937
+    },
+    {
+      "track_id": 2,
+      "position_converged": false,
+      "position_convergence_interval": null,
+      "radius_converged": false,
+      "radius_convergence_interval": null,
+      "final_position_change_mm": 0.04405076511997661,
+      "final_radius_change_mm": 0.0008948224194740839
+    },
+    {
+      "track_id": 3,
+      "position_converged": true,
+      "position_convergence_interval": 116,
+      "radius_converged": true,
+      "radius_convergence_interval": 104,
+      "final_position_change_mm": 0.014215499541866562,
+      "final_radius_change_mm": 0.002370466949473682
+    },
+    {
+      "track_id": 4,
+      "position_converged": true,
+      "position_convergence_interval": 9,
+      "radius_converged": true,
+      "radius_convergence_interval": 9,
+      "final_position_change_mm": 0.7459503643867063,
+      "final_radius_change_mm": 0.03809532889322356
+    }
+  ]
+}

@@ -38,8 +38,8 @@ class StructureSelection(Enum):
 # ============================================================
 # User Configuration Section
 # ============================================================
-SELECTED_STRUCTURE = StructureSelection.PPVC_CLUSTER_2  # Structure type selection
-CSV_SUBFOLDER = "case2"  # Subfolder selection (None = csv root, e.g., "case1")
+SELECTED_STRUCTURE = StructureSelection.PPVC_CLUSTER_4  # Structure type selection
+CSV_SUBFOLDER = "Case3"  # Subfolder selection (None = csv root, e.g., "case1")
 # ============================================================
 
 
@@ -55,12 +55,19 @@ CENTER_X_MAPPING_LINEAR = {
 
 # Center X mapping for CLUSTER_2, CLUSTER_4 structures
 CENTER_X_MAPPING_CLUSTER = {
-    60: 1.175,
-    120: 0.575,
-    180: -0.025,
-    240: -0.625,
-    300: -1.225,
-    360: -1.825,
+    60: 1.1,
+    120: 0.5,
+    180: -0.1,
+    240: -0.7,
+    300: -1.3,
+    360: -1.9,
+}
+
+# Center Y values for different structures
+CENTER_Y = {
+    'LINEAR': 0,
+    'CLUSTER_2': -0.1,
+    'CLUSTER_4': -0.045
 }
 
 
@@ -312,25 +319,30 @@ def process_single_file(
     # Create fresh config for each file
     config = Config()
 
-    # Get center_x from filename and create structure based on selection
+    # Get center_x from filename and center_y from dictionary
     center_x = get_center_x_from_filename(csv_file, SELECTED_STRUCTURE)
+    structure_key = SELECTED_STRUCTURE.name.replace('PPVC_', '')
+    center_y = CENTER_Y.get(structure_key, 0)
 
     if SELECTED_STRUCTURE == StructureSelection.PPVC_LINEAR:
         config.structure = create_ppvc_linear_config(
             center_x=center_x,
+            center_y=center_y,
             orientation=Orientation.HORIZONTAL,
         )
     elif SELECTED_STRUCTURE == StructureSelection.PPVC_CLUSTER_2:
         config.structure = create_ppvc_cluster_2_config(
             center_x=center_x,
+            center_y=center_y,
             orientation=Orientation.HORIZONTAL,
         )
     elif SELECTED_STRUCTURE == StructureSelection.PPVC_CLUSTER_4:
         config.structure = create_ppvc_cluster_4_config(
             center_x=center_x,
+            center_y=center_y,
             orientation=Orientation.HORIZONTAL,
         )
-    print(f"Structure: {SELECTED_STRUCTURE.value}, center_x={center_x}")
+    print(f"Structure: {SELECTED_STRUCTURE.value}, center_x={center_x}, center_y={center_y}")
 
     # Load file
     print("\nLoading data...")

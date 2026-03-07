@@ -1,0 +1,67 @@
+{
+  "total_count": 5,
+  "thresholds": {
+    "position_threshold_mm": 0.04,
+    "radius_threshold_mm": 0.002,
+    "consecutive_intervals": 5
+  },
+  "summary": {
+    "position_converged_count": 4,
+    "radius_converged_count": 4,
+    "fully_converged_count": 4,
+    "avg_position_convergence_interval": 65.5,
+    "avg_radius_convergence_interval": 67.0
+  },
+  "optimal_thresholds": {
+    "position_threshold_mm": 3.7301073929335913,
+    "radius_threshold_mm": 0.1669255143123805,
+    "consecutive_intervals": 5
+  },
+  "tracks": [
+    {
+      "track_id": 0,
+      "position_converged": true,
+      "position_convergence_interval": 68,
+      "radius_converged": true,
+      "radius_convergence_interval": 57,
+      "final_position_change_mm": 0.005245121000714321,
+      "final_radius_change_mm": 0.0008786081221665021
+    },
+    {
+      "track_id": 1,
+      "position_converged": true,
+      "position_convergence_interval": 61,
+      "radius_converged": true,
+      "radius_convergence_interval": 63,
+      "final_position_change_mm": 0.004390223133949647,
+      "final_radius_change_mm": 0.0006307641103597827
+    },
+    {
+      "track_id": 2,
+      "position_converged": true,
+      "position_convergence_interval": 91,
+      "radius_converged": true,
+      "radius_convergence_interval": 84,
+      "final_position_change_mm": 0.013314722439769118,
+      "final_radius_change_mm": 0.00020702796296040438
+    },
+    {
+      "track_id": 3,
+      "position_converged": true,
+      "position_convergence_interval": 42,
+      "radius_converged": true,
+      "radius_convergence_interval": 64,
+      "final_position_change_mm": 0.00514049533450139,
+      "final_radius_change_mm": 0.0003721891458988158
+    },
+    {
+      "track_id": 5,
+      "position_converged": false,
+      "position_convergence_interval": null,
+      "radius_converged": false,
+      "radius_convergence_interval": null,
+      "final_position_change_mm": 3.0810522959884037,
+      "final_radius_change_mm": 0.08342813916234135
+    }
+  ]
+}

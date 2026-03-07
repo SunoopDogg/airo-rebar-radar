@@ -1,0 +1,67 @@
+{
+  "total_count": 5,
+  "thresholds": {
+    "position_threshold_mm": 0.04,
+    "radius_threshold_mm": 0.002,
+    "consecutive_intervals": 5
+  },
+  "summary": {
+    "position_converged_count": 2,
+    "radius_converged_count": 4,
+    "fully_converged_count": 2,
+    "avg_position_convergence_interval": 50.0,
+    "avg_radius_convergence_interval": 54.75
+  },
+  "optimal_thresholds": {
+    "position_threshold_mm": 1.2661609224671353,
+    "radius_threshold_mm": 0.6794276025868288,
+    "consecutive_intervals": 5
+  },
+  "tracks": [
+    {
+      "track_id": 0,
+      "position_converged": false,
+      "position_convergence_interval": null,
+      "radius_converged": true,
+      "radius_convergence_interval": 113,
+      "final_position_change_mm": 0.007657736584550316,
+      "final_radius_change_mm": 0.0047518992910174085
+    },
+    {
+      "track_id": 1,
+      "position_converged": true,
+      "position_convergence_interval": 76,
+      "radius_converged": true,
+      "radius_convergence_interval": 78,
+      "final_position_change_mm": 0.07566773172274183,
+      "final_radius_change_mm": 0.0036013002312172693
+    },
+    {
+      "track_id": 2,
+      "position_converged": true,
+      "position_convergence_interval": 24,
+      "radius_converged": true,
+      "radius_convergence_interval": 24,
+      "final_position_change_mm": 0.11766738652027502,
+      "final_radius_change_mm": 0.006335432691451787
+    },
+    {
+      "track_id": 3,
+      "position_converged": false,
+      "position_convergence_interval": null,
+      "radius_converged": true,
+      "radius_convergence_interval": 4,
+      "final_position_change_mm": 0.09413786143180897,
+      "final_radius_change_mm": 0.0013516801835068704
+    },
+    {
+      "track_id": 4,
+      "position_converged": false,
+      "position_convergence_interval": null,
+      "radius_converged": false,
+      "radius_convergence_interval": null,
+      "final_position_change_mm": 1.2661609214671352,
+      "final_radius_change_mm": 0.31618817203498195
+    }
+  ]
+}

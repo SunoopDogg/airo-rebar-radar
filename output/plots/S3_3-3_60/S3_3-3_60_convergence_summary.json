@@ -1,0 +1,103 @@
+{
+  "total_count": 9,
+  "thresholds": {
+    "position_threshold_mm": 0.04,
+    "radius_threshold_mm": 0.002,
+    "consecutive_intervals": 5
+  },
+  "summary": {
+    "position_converged_count": 9,
+    "radius_converged_count": 9,
+    "fully_converged_count": 9,
+    "avg_position_convergence_interval": 69.88888888888889,
+    "avg_radius_convergence_interval": 38.0
+  },
+  "optimal_thresholds": {
+    "position_threshold_mm": 0.030444761420865725,
+    "radius_threshold_mm": 0.0009802498066708303,
+    "consecutive_intervals": 5
+  },
+  "tracks": [
+    {
+      "track_id": 0,
+      "position_converged": true,
+      "position_convergence_interval": 77,
+      "radius_converged": true,
+      "radius_convergence_interval": 45,
+      "final_position_change_mm": 0.006903067281816026,
+      "final_radius_change_mm": 0.00018274854754127268
+    },
+    {
+      "track_id": 1,
+      "position_converged": true,
+      "position_convergence_interval": 76,
+      "radius_converged": true,
+      "radius_convergence_interval": 31,
+      "final_position_change_mm": 0.007924217196097538,
+      "final_radius_change_mm": 2.834745532059868e-05
+    },
+    {
+      "track_id": 2,
+      "position_converged": true,
+      "position_convergence_interval": 57,
+      "radius_converged": true,
+      "radius_convergence_interval": 22,
+      "final_position_change_mm": 0.0031198963116958883,
+      "final_radius_change_mm": 0.00010345951147530674
+    },
+    {
+      "track_id": 3,
+      "position_converged": true,
+      "position_convergence_interval": 65,
+      "radius_converged": true,
+      "radius_convergence_interval": 30,
+      "final_position_change_mm": 0.0038478084850505686,
+      "final_radius_change_mm": 0.0002614378027988862
+    },
+    {
+      "track_id": 4,
+      "position_converged": true,
+      "position_convergence_interval": 100,
+      "radius_converged": true,
+      "radius_convergence_interval": 34,
+      "final_position_change_mm": 0.009942061918417365,
+      "final_radius_change_mm": 0.00040369791788619214
+    },
+    {
+      "track_id": 5,
+      "position_converged": true,
+      "position_convergence_interval": 84,
+      "radius_converged": true,
+      "radius_convergence_interval": 33,
+      "final_position_change_mm": 0.012434901342852234,
+      "final_radius_change_mm": 0.00021182530504995634
+    },
+    {
+      "track_id": 6,
+      "position_converged": true,
+      "position_convergence_interval": 65,
+      "radius_converged": true,
+      "radius_convergence_interval": 73,
+      "final_position_change_mm": 0.0034187248836555053,
+      "final_radius_change_mm": 0.0001405011045528537
+    },
+    {
+      "track_id": 7,
+      "position_converged": true,
+      "position_convergence_interval": 76,
+      "radius_converged": true,
+      "radius_convergence_interval": 45,
+      "final_position_change_mm": 0.009363496569809476,
+      "final_radius_change_mm": 0.00026114023351717086
+    },
+    {
+      "track_id": 8,
+      "position_converged": true,
+      "position_convergence_interval": 29,
+      "radius_converged": true,
+      "radius_convergence_interval": 29,
+      "final_position_change_mm": 0.5458435723551011,
+      "final_radius_change_mm": 0.08269919672342085
+    }
+  ]
+}

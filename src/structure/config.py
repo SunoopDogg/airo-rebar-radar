@@ -58,6 +58,10 @@ class StructureConfig:
     cluster_internal_spacing: float = 0.150  # dd: 150mm spacing within cluster
     rebars_per_cluster: int = 1  # 1 for linear, 2 for cluster-2, 4 for cluster-4
 
+    # Cluster position adjustment offsets
+    cluster_center_offset: float = 0.0      # Cluster center offset (wall_width direction)
+    wall_edge_extra_offset: float = 0.0     # Wall edge extra offset (wall_length direction)
+
     # Structure center position
     center_x: float = -2.1     # X-axis center
     center_y: float = -3.45     # Y-axis center
@@ -138,6 +142,8 @@ class StructureConfig:
             rebars_per_cluster=self.rebars_per_cluster,
             wall_length=self.wall_length,
             wall_thickness=self.width,
+            cluster_center_offset=self.cluster_center_offset,
+            wall_edge_extra_offset=self.wall_edge_extra_offset,
         )
 
     def _get_cluster_4_positions(self) -> list[tuple[float, float]]:
@@ -149,6 +155,8 @@ class StructureConfig:
             cluster_internal_spacing=self.cluster_internal_spacing,
             wall_length=self.wall_length,
             wall_thickness=self.width,
+            cluster_center_offset=self.cluster_center_offset,
+            wall_edge_extra_offset=self.wall_edge_extra_offset,
         )
 
     def get_track_positions(self) -> list[tuple[float, float]]:
@@ -252,6 +260,8 @@ def create_ppvc_cluster_2_config(
         center_x=center_x,
         center_y=center_y,
         yaw=yaw,
+        cluster_center_offset=0.0,
+        wall_edge_extra_offset=0.075,
     )
 
 
@@ -275,4 +285,6 @@ def create_ppvc_cluster_4_config(
         center_x=center_x,
         center_y=center_y,
         yaw=yaw,
+        cluster_center_offset=0.075,
+        wall_edge_extra_offset=0.075,
     )

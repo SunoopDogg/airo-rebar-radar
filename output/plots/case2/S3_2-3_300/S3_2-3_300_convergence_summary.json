@@ -1,0 +1,67 @@
+{
+  "total_count": 5,
+  "thresholds": {
+    "position_threshold_mm": 0.04,
+    "radius_threshold_mm": 0.002,
+    "consecutive_intervals": 5
+  },
+  "summary": {
+    "position_converged_count": 2,
+    "radius_converged_count": 4,
+    "fully_converged_count": 2,
+    "avg_position_convergence_interval": 48.0,
+    "avg_radius_convergence_interval": 76.0
+  },
+  "optimal_thresholds": {
+    "position_threshold_mm": 0.06400767766083759,
+    "radius_threshold_mm": 0.002198684046329697,
+    "consecutive_intervals": 5
+  },
+  "tracks": [
+    {
+      "track_id": 0,
+      "position_converged": true,
+      "position_convergence_interval": 90,
+      "radius_converged": true,
+      "radius_convergence_interval": 104,
+      "final_position_change_mm": 0.03820226914997047,
+      "final_radius_change_mm": 0.0045133817561417156
+    },
+    {
+      "track_id": 1,
+      "position_converged": false,
+      "position_convergence_interval": null,
+      "radius_converged": true,
+      "radius_convergence_interval": 92,
+      "final_position_change_mm": 0.006254815527141687,
+      "final_radius_change_mm": 0.0009462045019170695
+    },
+    {
+      "track_id": 2,
+      "position_converged": false,
+      "position_convergence_interval": null,
+      "radius_converged": false,
+      "radius_convergence_interval": null,
+      "final_position_change_mm": 0.09435532282675091,
+      "final_radius_change_mm": 0.0022682710833429875
+    },
+    {
+      "track_id": 3,
+      "position_converged": false,
+      "position_convergence_interval": null,
+      "radius_converged": true,
+      "radius_convergence_interval": 102,
+      "final_position_change_mm": 0.00661811268348275,
+      "final_radius_change_mm": 6.336938446205309e-06
+    },
+    {
+      "track_id": 4,
+      "position_converged": true,
+      "position_convergence_interval": 6,
+      "radius_converged": true,
+      "radius_convergence_interval": 6,
+      "final_position_change_mm": 0.5455649691485188,
+      "final_radius_change_mm": 0.006488979544142653
+    }
+  ]
+}

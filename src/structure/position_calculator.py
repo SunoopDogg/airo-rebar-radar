@@ -131,6 +131,8 @@ class TrackPositionCalculator:
         rebars_per_cluster: int,
         wall_length: float,
         wall_thickness: float,
+        cluster_center_offset: float = 0.0,
+        wall_edge_extra_offset: float = 0.0,
     ) -> list[tuple[float, float]]:
         """Calculate track positions for PPVC_CLUSTER_2 type.
 
@@ -144,6 +146,8 @@ class TrackPositionCalculator:
             rebars_per_cluster: Number of rebars per cluster
             wall_length: Length of the wall (meters)
             wall_thickness: Wall thickness for offset (meters)
+            cluster_center_offset: Offset for cluster center (wall_width direction)
+            wall_edge_extra_offset: Extra offset from wall edge (wall_length direction)
 
         Returns:
             List of (x, y) tuples for track positions
@@ -153,7 +157,7 @@ class TrackPositionCalculator:
         positions = []
 
         # Offset from left edge of wall by wall thickness
-        wall_edge_offset = -wall_length / 2 + wall_thickness
+        wall_edge_offset = -wall_length / 2 + wall_thickness + wall_edge_extra_offset
 
         # Clusters are placed along wall_width direction (centered)
         total_span = (cluster_count - 1) * cluster_spacing
@@ -161,7 +165,10 @@ class TrackPositionCalculator:
 
         for i in range(cluster_count):
             # Cluster center position along wall_width direction
-            cluster_center = start_offset + i * cluster_spacing
+            # Apply inward offset (toward wall center) based on position sign
+            base_position = start_offset + i * cluster_spacing
+            inward_sign = -1 if base_position > 0 else (1 if base_position < 0 else 0)
+            cluster_center = base_position + inward_sign * abs(cluster_center_offset)
 
             # Generate positions for each rebar in the cluster
             for j in range(rebars_per_cluster):
@@ -194,6 +201,8 @@ class TrackPositionCalculator:
         cluster_internal_spacing: float,
         wall_length: float,
         wall_thickness: float,
+        cluster_center_offset: float = 0.0,
+        wall_edge_extra_offset: float = 0.0,
     ) -> list[tuple[float, float]]:
         """Calculate track positions for PPVC_CLUSTER_4 type (2x2 grid per cluster).
 
@@ -206,6 +215,8 @@ class TrackPositionCalculator:
             cluster_internal_spacing: Spacing within cluster (meters)
             wall_length: Length of the wall (meters)
             wall_thickness: Wall thickness for offset (meters)
+            cluster_center_offset: Offset for cluster center (wall_width direction)
+            wall_edge_extra_offset: Extra offset from wall edge (wall_length direction)
 
         Returns:
             List of (x, y) tuples for track positions
@@ -215,7 +226,7 @@ class TrackPositionCalculator:
         positions = []
 
         # Offset from left edge of wall by wall thickness
-        wall_edge_offset = -wall_length / 2 + wall_thickness
+        wall_edge_offset = -wall_length / 2 + wall_thickness + wall_edge_extra_offset
 
         # Clusters are placed along wall_width direction (centered)
         total_span = (cluster_count - 1) * cluster_spacing
@@ -223,7 +234,10 @@ class TrackPositionCalculator:
 
         for i in range(cluster_count):
             # Cluster center position along wall_width direction
-            cluster_center = start_offset + i * cluster_spacing
+            # Apply inward offset (toward wall center) based on position sign
+            base_position = start_offset + i * cluster_spacing
+            inward_sign = -1 if base_position > 0 else (1 if base_position < 0 else 0)
+            cluster_center = base_position + inward_sign * abs(cluster_center_offset)
 
             # 2x2 grid: 2 rebars in X direction, 2 rebars in Y direction
             for row in range(2):  # Y direction (wall_width)
